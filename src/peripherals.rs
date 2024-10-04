@@ -1,5 +1,5 @@
 use gpio::GPIOA;
-use rcc::Rcc;
+use rcc::{Rcc, RCC};
 use usart::{Usart, UsartConfig};
 
 pub mod gpio;
@@ -8,19 +8,24 @@ pub mod usart;
 
 // TODO implement singleton
 pub struct Peripherals<'a> {
-    pub rcc: Rcc,
-    pub gpioa: GPIOA,
+    pub rcc: RCC,
+    pub gpioa: GPIOA<'a>,
     pub usart: Usart<'a>,
 }
 
+pub struct Config {
+    // gpioa_config: GPIOAConfig,
+    pub usart_config: UsartConfig,
+}
+
 impl<'a> Peripherals<'a> {
-    pub fn take() -> Peripherals<'a> {
-        let rcc = Rcc::new();
+    pub fn take(rcc: Rcc, c: Config) -> Peripherals<'a> {
+        let rcc_freeze = rcc.freeze();
         let gpioa = GPIOA::new();
-        let usart = Usart::new(UsartConfig { baud_rate: 9600 });
+        let usart = Usart::new(c.usart_config);
 
         Peripherals {
-            rcc: rcc,
+            rcc: rcc_freeze,
             gpioa: gpioa,
             usart: usart,
         }
