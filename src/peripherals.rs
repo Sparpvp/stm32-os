@@ -6,7 +6,6 @@ pub mod gpio;
 pub mod rcc;
 pub mod usart;
 
-// TODO implement singleton
 pub struct Peripherals<'a> {
     pub rcc: RCC,
     pub gpioa: GPIOA<'a>,
@@ -19,6 +18,7 @@ pub struct Config {
 }
 
 impl<'a> Peripherals<'a> {
+    // TODO implement singleton
     pub fn take(rcc: Rcc, c: Config) -> Peripherals<'a> {
         let rcc_freeze = rcc.freeze();
         let gpioa = GPIOA::new();

@@ -24,6 +24,12 @@ struct RegisterBlock {
     pub cr2: RW<u32>,
 }
 
+// Factory pattern: construct RCC only if Rcc has been acquired.
+// => Pass RCC as a proof of configured clocks
+pub struct RCC {
+    _rb: ROBlock,
+}
+
 #[repr(C)]
 struct ROBlock {
     cr: u32,
@@ -45,12 +51,6 @@ struct ROBlock {
 pub struct RccConfig {
     pub sysclk: u32,
     pub pclk: u32,
-}
-
-// Factory pattern: construct RCC only if Rcc has been acquired.
-// => Pass RCC as a proof of configured clocks
-pub struct RCC {
-    _rb: ROBlock,
 }
 
 impl<'a> Rcc<'a> {

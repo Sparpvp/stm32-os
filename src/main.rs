@@ -15,13 +15,17 @@ use peripherals::{
 extern "C" fn kmain() -> ! {
     // hprintln!("Xemo vivi!").unwrap();
 
-    let rcc = Rcc::new(RccConfig { sysclk: 8, pclk: 8 });
+    let rcc = Rcc::new(RccConfig {
+        sysclk: 8_000_000,
+        pclk: 8_000_000,
+    });
     let config = Config {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
     let p = Peripherals::take(rcc, config);
 
-    p.usart.write('a' as u8, &p.rcc);
+    // p.usart.write('a' as u8, &p.rcc);
+    // p.usart.read(&p.rcc);
 
     loop {}
 }

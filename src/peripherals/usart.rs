@@ -1,5 +1,6 @@
 use core::str;
 
+use cortex_m_semihosting::hprintln;
 use volatile_register::RW;
 
 use super::rcc::RCC;
@@ -37,7 +38,9 @@ impl<'a> Usart<'a> {
         unsafe {
             // TODO! I've hardcoded 8mhz as RCC PCLK frequency
             g.brr.write(8_000_000 / c.baud_rate);
-            g.cr2.write(0); 
+            // TE (3): Transmitter Enable, RE (2): Receiver Enable, UE (0): USART Enable
+            g.cr1.write((1 << 3) | (1 << 2) | (1 << 0));
+            g.cr2.write(0);
             g.cr3.write(0);
         }
 
@@ -47,11 +50,12 @@ impl<'a> Usart<'a> {
     pub fn write(&self, data: u8, _rcc: &RCC) {
         // Configure USART as transmitter
         unsafe {
-            // TE (3): Transmitter Enable
-            // UE (0): USART Enable
-            self._rb.cr1.write((1 << 3) | (1 << 0));
+            // Wait for TXE (clear to send)
+            while (self._rb.isr.read() & (1 << 7)) == 0 {}
             // Send byte
             self._rb.tdr.write(data as u32 & 0xFF);
+            // Wait for TC (Transmission Complete)
+            while (self._rb.isr.read() & (1 << 6)) == 0 {}
             // Notify end
             self._rb.icr.modify(|m| m | (1 << 6));
         }
@@ -59,15 +63,19 @@ impl<'a> Usart<'a> {
 
     pub fn write_string(&self, s: &str, _rcc: &RCC) {
         unsafe {
-            self._rb.cr1.write((1 << 3) | (1 << 0));
-            s.as_bytes()
-                .into_iter()
-                .for_each(|w| self._rb.tdr.write(*w as u32));
-            todo!()
+            s.as_bytes().into_iter().for_each(|w| {
+                while (self._rb.isr.read() & (1 << 7)) == 0 {}
+                self._rb.tdr.write(*w as u32 & 0xFF);
+                while (self._rb.isr.read() & (1 << 6)) == 0 {}
+                self._rb.icr.modify(|m| m | (1 << 6));
+            });
         }
     }
 
     pub fn read(&self, _rcc: &RCC) {
-        todo!()
+        while (self._rb.isr.read() & (1 << 5)) == 0 {}
+        let r = (self._rb.rdr.read() & 0xFF) as u8;
+        // TODO: fix; hprintln seems to be bugged when trying to print a single char character.
+        hprintln!("Received: {}", r).unwrap();
     }
 }
