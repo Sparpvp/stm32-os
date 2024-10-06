@@ -42,7 +42,12 @@ SECTIONS {
       PROVIDE(_bss_end = .);
    }> RAM
 
+   PROVIDE(_memory_end = ORIGIN(RAM) + LENGTH(RAM));
+
    /* Make space for kernel stack. 0x400 = 1K */
    PROVIDE(_stack_start = _bss_end + 0x4);
-   PROVIDE(_stack_end = _stack_start + 0x404);
+   PROVIDE(_stack_end = _stack_start + 0x400);
+
+   PROVIDE(_heap_start = _stack_end + 0x4);
+   PROVIDE(_heap_size = _memory_end - heap_start);
 }

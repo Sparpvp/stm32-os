@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+pub mod allocator;
 pub mod panic;
 pub mod peripherals;
 
