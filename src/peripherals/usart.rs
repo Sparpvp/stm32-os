@@ -28,7 +28,6 @@ struct RegisterBlock {
 
 pub struct UsartConfig {
     pub baud_rate: u32,
-    // TODO ...
 }
 
 impl<'a> Usart<'a> {

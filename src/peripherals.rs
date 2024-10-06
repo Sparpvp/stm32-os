@@ -18,7 +18,6 @@ pub struct Config {
 }
 
 impl<'a> Peripherals<'a> {
-    // TODO implement singleton
     pub fn take(rcc: Rcc, c: Config) -> Peripherals<'a> {
         let rcc_freeze = rcc.freeze();
         let gpioa = GPIOA::new();

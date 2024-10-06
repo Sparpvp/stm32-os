@@ -24,7 +24,7 @@ struct RegisterBlock {
     pub cr2: RW<u32>,
 }
 
-// Factory pattern: construct RCC only if Rcc has been acquired.
+// Construct RCC only if Rcc has been acquired.
 // => Pass RCC as a proof of configured clocks
 pub struct RCC {
     _rb: ROBlock,
@@ -58,8 +58,8 @@ impl<'a> Rcc<'a> {
         let rcc = unsafe { &mut *(RCC_ADDR as *mut RegisterBlock) };
 
         unsafe {
-            // Modify default clocks...
-            // TODO: Use config to do so
+            // Modify default clocks
+            // TODO
 
             // Enable GPIOA clock
             rcc.ahbenr.modify(|m| m | (1 << 17));
