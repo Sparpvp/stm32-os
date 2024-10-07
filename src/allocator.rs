@@ -59,8 +59,10 @@ unsafe fn init_metadata(heap: *mut FreeList, size: u16, is_allocated: bool) {
 }
 
 unsafe fn zero_memory(block: *mut FreeList, size: u16) {
+    let mut tmp_block = block as *mut u8;
+    tmp_block = tmp_block.add(size_of::<u16>());
     for i in 0..size {
-        (*block.add(i as usize)).memory = 0 as *mut u8;
+        *(tmp_block.add(i as usize)) = 0;
     }
 }
 
@@ -77,12 +79,12 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
     }
 
     if (*tmp_head).size == size {
-        todo!()
+        init_metadata(tmp_head, 0, true);
     } else if (*tmp_head).size > size {
         let remaining_size = (*tmp_head).size - size;
-        init_metadata(heap, size, true);
+        init_metadata(tmp_head, size, true);
         init_metadata(
-            heap.add(size as usize + size_of::<u16>()),
+            tmp_head.add(size as usize + size_of::<u16>()),
             remaining_size,
             false,
         );
