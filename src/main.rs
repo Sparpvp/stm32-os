@@ -6,7 +6,7 @@ pub mod panic;
 pub mod peripherals;
 
 use allocator::{zalloc_block, FreeList};
-use cortex_m_semihosting::hprintln;
+// use cortex_m_semihosting::hprintln;
 use peripherals::{
     rcc::{Rcc, RccConfig},
     usart::UsartConfig,
@@ -27,7 +27,7 @@ extern "C" fn kmain() -> ! {
     let p = Peripherals::take(rcc, config);
 
     // FreeList::init();
-    // let ptr1 = unsafe { zalloc_block(10) };
+    // let ptr1 = unsafe { zalloc_block(12) };
     // let ptr2 = unsafe { zalloc_block(20) };
 
     // p.usart.write('a' as u8, &p.rcc);
