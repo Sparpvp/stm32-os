@@ -26,10 +26,9 @@ extern "C" fn kmain() -> ! {
     };
     let p = Peripherals::take(rcc, config);
 
-    FreeList::init();
-    unsafe {
-        zalloc_block(10);
-    };
+    // FreeList::init();
+    // let ptr1 = unsafe { zalloc_block(10) };
+    // let ptr2 = unsafe { zalloc_block(20) };
 
     // p.usart.write('a' as u8, &p.rcc);
     // p.usart.read(&p.rcc);

@@ -1,5 +1,7 @@
 use core::mem::size_of;
 
+use cortex_m_semihosting::hprintln;
+
 extern "C" {
     static _heap_start: usize;
     static _heap_size: usize;
@@ -71,7 +73,7 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
 
     let mut tmp_head = heap;
     let heap_end = get_heap_end();
-    while (tmp_head as usize) < heap_end && ((*tmp_head).size & 1) == 0 && (*tmp_head).size < size {
+    while (tmp_head as usize) < heap_end && ((*tmp_head).size & 1) == 1 && (*tmp_head).size < size {
         if (tmp_head as usize) >= heap_end {
             return 0 as *mut FreeList; // Out of memory
         }
@@ -103,6 +105,7 @@ pub unsafe fn zalloc_block(size: u16) -> *mut FreeList {
         }
         // non-NULL heap: it has been initialized
         FreeListWrapper(heap) => {
+            // hprintln!("Allocating size {}...", size).unwrap();
             let newblock_ptr = alloc_first_fit(heap, size);
             if newblock_ptr == 0 as *mut FreeList {
                 return 0 as *mut FreeList;
