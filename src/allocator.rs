@@ -52,7 +52,14 @@ impl FreeList {
     }
 }
 
+#[inline]
+fn assert_4_alignment(block: *mut u8) {
+    assert_eq!(block as usize % 4 == 0, true);
+}
+
 unsafe fn init_metadata(heap: *mut FreeList, size: u16, is_allocated: bool) {
+    assert_4_alignment(heap as *mut u8);
+
     (*heap).size = size;
     if is_allocated {
         (*heap).size |= 1;
@@ -62,10 +69,12 @@ unsafe fn init_metadata(heap: *mut FreeList, size: u16, is_allocated: bool) {
 }
 
 unsafe fn zero_memory(block: *mut u8, size: u16) {
+    assert_4_alignment(block);
     block.write_bytes(0, size as usize);
 }
 
 unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
+    assert_4_alignment(heap as *mut u8);
     assert_eq!(size < get_heap_size() as u16, true);
 
     let mut tmp_head = heap;
