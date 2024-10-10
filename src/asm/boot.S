@@ -1,5 +1,6 @@
 .section ".text.boot"
 .global _start
+.global _isr_vector
 .thumb
 .thumb_func
 
@@ -31,19 +32,3 @@ setzero:
 halt:
     wfe
     b halt
-
-/* --------------------------- */
-/*     Interrupt Handler       */
-
-// The Cortex-M0 doc says: 
-// 0x0 Initial SP value -> Reset -> NMI -> HardFault -> Reserved
-// https://developer.arm.com/documentation/dui0497/a/the-cortex-m0-processor/exception-model/vector-table
-
-.section .isr_vector, "a"
-.global _isr_vector
-.thumb
-.thumb_func
-
-_isr_vector:
-    .word _stack_end
-    .word _start

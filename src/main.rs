@@ -4,6 +4,7 @@
 pub mod allocator;
 pub mod panic;
 pub mod peripherals;
+mod trap;
 
 use allocator::{zalloc_block, FreeList};
 // use cortex_m_semihosting::hprintln;

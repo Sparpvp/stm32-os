@@ -4,8 +4,6 @@ use std::io::Write;
 use std::path::PathBuf;
 
 fn main() {
-    // Put `memory.x` in our output directory and ensure it's
-    // on the linker search path.
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
     File::create(out.join("memory.x"))
         .unwrap()
@@ -13,13 +11,16 @@ fn main() {
         .unwrap();
     println!("cargo:rustc-link-search={}", out.display());
 
-    // Re-run the build script if memory.x or boot.S changes
+    // Re-run the build script if these file change
     println!("cargo:rerun-if-changed=memory.x");
     println!("cargo:rerun-if-changed=src/asm/boot.S");
+    println!("cargo:rerun-if-changed=src/asm/trap.S");
 
     println!("cargo:rustc-link-arg=--nmagic");
     println!("cargo:rustc-link-arg=-Tmemory.x");
 
-    // Compile boot.S using the cc crate
-    cc::Build::new().file("src/asm/boot.S").compile("boot");
+    cc::Build::new()
+        .file("src/asm/boot.S")
+        .file("src/asm/trap.S")
+        .compile("asm-boot-trap");
 }

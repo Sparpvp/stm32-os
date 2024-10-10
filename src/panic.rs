@@ -5,7 +5,7 @@ use cortex_m_semihosting::hprintln;
 extern "C" fn eh_personality() {}
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    hprintln!("Aborting: ").unwrap();
+    hprintln!("Panicking...: ").unwrap();
 
     match info.location() {
         Some(l) => {
