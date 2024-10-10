@@ -18,6 +18,11 @@ use peripherals::{
 extern "C" fn kmain() -> ! {
     // hprintln!("Xemo vivi!").unwrap();
 
+    unsafe {
+        let unaligned_ptr = (0x080003 as *mut u8);
+        *unaligned_ptr = 5; // Hard Fault
+    }
+
     let rcc = Rcc::new(RccConfig {
         sysclk: 8_000_000,
         pclk: 8_000_000,

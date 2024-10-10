@@ -4,14 +4,23 @@ const ICSR_ADDR: u32 = 0xE000ED04;
 
 #[no_mangle]
 extern "C" fn rust_trap_handler() {
-    // Save current registers onto the stack
+    // Save the callee-saved registers onto the stack
+    // According to the arm calling convention, those are r4-r7
     unsafe {
-        asm!("PUSH {{r0-r7}}");
+        asm!("PUSH {{r4-r7}}");
     };
 
     let mut return_pc: u16;
     unsafe {
-        asm!("mov {}, pc", out(reg) return_pc);
+        // sp+24 should point to the PC
+        asm!(
+            "
+            add sp, 24    
+            mov r4, sp
+            sub sp, 24
+        "
+        );
+        asm!("LDR {}, [r4]", out(reg) return_pc);
     };
 
     // Match on the Interrupt Control and State Register (ICSR)
@@ -25,7 +34,7 @@ extern "C" fn rust_trap_handler() {
         }
         3 => {
             // Hard Fault
-            panic!("Hard Fault exception triggered!\n");
+            // panic!("Hard Fault exception triggered!\n");
         }
         11 => {
             // SVCall
@@ -47,8 +56,8 @@ extern "C" fn rust_trap_handler() {
     // Get back to next instruction and restore the registers pushed onto the stack
     unsafe {
         asm!(
-            "mov pc, {}",
-            "POP {{r0-r7}}",
+            "POP {{r4-r7}}",
+            "bx {}",
             in(reg) return_pc
         );
     };
