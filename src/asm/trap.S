@@ -5,6 +5,28 @@
 // 0x0 Initial SP value -> Reset -> NMI -> HardFault -> Reserved -> ...
 // https://developer.arm.com/documentation/dui0497/a/the-cortex-m0-processor/exception-model/vector-table
 
+.section ".text.trapwrapper"
+.global _trap_wrapper
+.thumb
+.thumb_func
+
+_trap_wrapper:
+    mrs r0, msp
+    mov r1, lr
+    mov r2, #0b100
+    tst r1, r2 // bit 3 of LR tells us whether we'll be using msp or psp
+    bne psp_jmp
+    b call_handler
+psp_jmp:
+    mrs r0, psp
+call_handler:
+    // push {r0-r3}
+    ldr r1, =rust_trap_handler
+    bx r1   // r0 is used as the first parameter to be passed to the function
+    mov lr, r2
+    // pop {r0-r3}
+    bx lr
+
 .section .isr_vector, "a"
 .global _isr_vector
 .thumb
@@ -13,8 +35,8 @@
 _isr_vector:
     .word _stack_end
     .word _start
-    .word rust_trap_handler
-    .word rust_trap_handler
+    .word _trap_wrapper
+    .word _trap_wrapper
     .word 0
     .word 0
     .word 0
@@ -22,12 +44,14 @@ _isr_vector:
     .word 0
     .word 0
     .word 0
-    .word rust_trap_handler
+    .word _trap_wrapper
     .word 0
     .word 0
-    .word rust_trap_handler
-    .word rust_trap_handler
+    .word _trap_wrapper
+    .word _trap_wrapper
     /* 
-        Here we're setting rust_trap_handler for each vector entry.
-        It'll be called in different circumstances and it's up to the handler to distinguish each case.
+        Here we're setting a procedure that calls the trap handler 
+            giving the correct stack pointer for each vector entry.
+        It'll be called in different circumstances 
+            and it's up to the handler to distinguish each case.
     */
