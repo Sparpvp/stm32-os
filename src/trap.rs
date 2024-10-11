@@ -3,19 +3,34 @@ use core::{arch::asm, ptr::read_volatile};
 const ICSR_ADDR: u32 = 0xE000ED04;
 
 #[no_mangle]
-extern "C" fn rust_trap_handler(stack_ptr: *const u32) {
+extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     /*
         Current bugs:
-            - stack_ptr gets overwritten by PUSH as soon as I do it
+            -* stack_ptr gets overwritten by PUSH as soon as I do it
             - for some reason if I call this with blx it doesn't
                 get processed at all
-                => How do I return from here?
+                => How do I return properly from here?? (in a way such that the cpu resets the
+                interrupt state like it would by normally exiting the function)
     */
 
     // Save the callee-saved registers onto the stack
     // According to the arm calling convention, those are r4-r7
+
+    // BIG TODO: QUESTO È UN ACCROCCHIO!!!
+    /* Ho impostato stack_ptr come argomento mut per poterlo modificare.
+        Siccome stack_ptr apparentemente è sullo stack, se modifico lo stack ptr con push/pop,
+        verrebbe modificato l'indirizzo relativo a stack_ptr. (ancora non mi è chiaro perchè
+        ciò debba avvenire con queste modalità).
+        Per ovviare, salvo stack_ptr su r3, uno scratch register, pusho i registri callee-saved,
+        e ripristino di nuovo stack_ptr da r3.
+    */
     unsafe {
-        asm!("PUSH {{r4-r7}}");
+        asm!("
+            mov r3, {0}
+            PUSH {{r4-r7}}
+            mov {1}, r3
+        ", in(reg) stack_ptr, out(reg) stack_ptr
+        );
     };
 
     let mut return_pc: u32;
