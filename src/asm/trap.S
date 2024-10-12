@@ -20,11 +20,21 @@ _trap_wrapper:
 psp_jmp:
     mrs r0, psp
 call_handler:
-    // push {r0-r3}
+    // TODO: mask everything! We don't want to be interrupted.
+    // Look for: Exception mask register
+
+    // r0-r3 registers are saved by the cpu on exception entry
     ldr r1, =rust_trap_handler
     bx r1   // r0 is used as the first parameter to be passed to the function
-    mov lr, r2
-    // pop {r0-r3}
+
+.global _update_pc
+.thumb
+.thumb_func
+_update_pc:
+    // r0 -> pc
+    // r1 -> stack_ptr
+    add r1, #24
+    STR r0, [r1]
     bx lr
 
 .section .isr_vector, "a"
