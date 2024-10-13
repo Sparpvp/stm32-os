@@ -1,43 +1,33 @@
-use core::{arch::asm, ptr::read_volatile};
+use core::{
+    arch::asm,
+    ptr::{read_volatile, write_volatile},
+};
 
 const ICSR_ADDR: u32 = 0xE000ED04;
+const NVIC_ICER: u32 = 0xE000E180;
 
-// TODO: also rewrite this using only pure assembly
 #[inline(always)]
-unsafe fn get_pc(stack_ptr: *const u32) -> u32 {
-    let mut base_pc: u32;
+unsafe fn get_stack_alignment() -> usize {
+    let curr_stack_ptr: usize;
 
-    unsafe {
-        asm!(
-            "
-            MOV r3, {0}
-            ADDS r3, #24
-            LDR r2, [r3]
-            MOV {1}, r2
-        ", in(reg) stack_ptr, out(reg) base_pc
-        );
-    };
+    asm!("
+        MOV {0}, sp
+    ", out(reg) curr_stack_ptr
+    );
 
-    base_pc
+    let remainder = curr_stack_ptr as usize % 8;
+    remainder
 }
 
 extern "C" {
+    fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
     fn _update_pc(pc: u32, stack_ptr: *const u32);
     fn _get_pc(stack_ptr: *const u32) -> u32;
 }
 
 #[no_mangle]
 extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
-    // TODO:
     /*
-        Nonostante le ultime considerazioni, penso di dover salvare LR comunque.
-        Se non posso popparlo dallo stack, verificare se posso metterlo in 
-            un registro tra r2-r3, che non usano le mie funzioni in assembly.
-            Non so se questa funzione in rust si può permettere di modificare da r0-r3.
-            
-        1) Save LR on stack
-        2) POP LR from the stack
-
         La procedura di ritorno in ARMv6-M è diversa da quasi tutte le altre architetture.
         Pertanto, fare riferimento a QUESTE procedure:
             -> https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-m-and-armv7-m-profiles/handling-an-exception
@@ -47,19 +37,16 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
             quindi, NON: https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/handling-an-exception
             e NON: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
+    assert_eq!(unsafe { get_stack_alignment() == 0 }, true);
 
     // Save the callee-saved registers onto the stack
     // According to the arm calling convention, those are r4-r7
-    unsafe {
-        asm!("
-            MOV r3, {0}
-            PUSH {{r4-r7, lr}}
-            MOV {1}, r3
-        ", in(reg) stack_ptr, out(reg) stack_ptr
-        );
+    stack_ptr = unsafe {
+        asm!("MOV r3, lr", clobber_abi("aapcs"));
+        _setup_frame(stack_ptr)
     };
 
-    let mut return_pc = unsafe { get_pc(stack_ptr) };
+    let mut return_pc = unsafe { _get_pc(stack_ptr) };
 
     // Match on the Interrupt Control and State Register (ICSR)
     let icsr: u32 = unsafe { read_volatile(ICSR_ADDR as *const u32) };
@@ -98,12 +85,21 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         _update_pc(return_pc, stack_ptr);
     };
 
-    // Restore the registers pushed onto the stack
+    // Clear interrupt from NVIC
+    let nvic_icer = NVIC_ICER as *mut u32;
+    unsafe {
+        // On writes: 1 - Disables the associated interrupt
+        // https://developer.arm.com/documentation/ddi0419/c/System-Level-Architecture/System-Address-Map/Nested-Vectored-Interrupt-Controller--NVIC/Interrupt-Clear-Enable-Register--NVIC-ICER?lang=en
+        write_volatile(nvic_icer, 1);
+    };
+
+    // Unmask Interrupts and Restore the registers pushed onto the stack
     unsafe {
         asm!(
             "
-            POP {{r4-r7, lr}}
-            SUBS pc, lr, #4
+            CPSIE i
+            POP {{r3, r4-r7}}
+            MOV lr, r3
         "
         );
     };

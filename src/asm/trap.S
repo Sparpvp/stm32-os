@@ -11,22 +11,22 @@
 .thumb_func
 
 _trap_wrapper:
+    CPSID i     // mask everything! We don't want to be interrupted.
     mrs r0, msp
     mov r1, lr
     mov r2, #0b100
-    tst r1, r2 // bit 3 of LR tells us whether we'll be using msp or psp
+    tst r1, r2  // bit 3 of LR tells us whether we'll be using msp or psp
     bne psp_jmp
     b call_handler
 psp_jmp:
     mrs r0, psp
 call_handler:
-    // TODO: mask everything! We don't want to be interrupted.
-    // Look for: Exception mask register
-
     // r0-r3 registers are saved by the cpu on exception entry
     ldr r1, =rust_trap_handler
-    bx r1   // r0 is used as the first parameter to be passed to the function
+    bx r1       // r0 is used as the first parameter to be passed to the function
 
+/* --------------------------- */
+/*        Helper Funcs         */
 .global _update_pc
 .thumb
 .thumb_func
@@ -36,6 +36,27 @@ _update_pc:
     add r1, #24
     STR r0, [r1]
     bx lr
+
+.global _get_pc
+.thumb
+.thumb_func
+_get_pc:
+    // r0 -> stack_ptr; ret value
+    add r0, #24
+    LDR r1, [r0]
+    mov r0, r1
+    bx lr
+
+.global _setup_frame
+.thumb
+.thumb_func
+_setup_frame:
+    // r0 -> stack_ptr; ret value
+    PUSH {r3, r4-r7}
+    bx lr
+
+/* ----------------------------- */
+/*         Vector Table          */
 
 .section .isr_vector, "a"
 .global _isr_vector
