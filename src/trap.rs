@@ -43,6 +43,8 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     // According to the arm calling convention, those are r4-r7
     stack_ptr = unsafe {
         asm!("MOV r3, lr", clobber_abi("aapcs"));
+        // Modifying the current sp, for some reason, modifies the stack_ptr variable too.
+        // So I return the stack_ptr that was passed as an argument.
         _setup_frame(stack_ptr)
     };
 
@@ -59,8 +61,8 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         }
         3 => {
             // Hard Fault
-            // panic!("Hard Fault exception triggered!\n");
-            return_pc += 4;
+            panic!("Hard Fault exception triggered!\n");
+            // return_pc += 4; // Here for testing purposes
         }
         11 => {
             // SVCall
