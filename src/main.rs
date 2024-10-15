@@ -1,13 +1,17 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+use alloc::vec::Vec;
+
 pub mod allocator;
 pub mod panic;
 pub mod peripherals;
-mod trap;
+pub mod process;
+pub mod trap;
 
-use allocator::{zalloc_block, FreeList};
-// use cortex_m_semihosting::hprintln;
+use allocator::memory::{free, zalloc_block, FreeList};
+use cortex_m_semihosting::hprintln;
 use peripherals::{
     rcc::{Rcc, RccConfig},
     usart::UsartConfig,
@@ -17,6 +21,14 @@ use peripherals::{
 #[no_mangle]
 extern "C" fn kmain() -> ! {
     // hprintln!("Xemo vivi!").unwrap();
+
+    FreeList::init();
+
+    // let heap1 = zalloc_block(50);
+    // free(heap1);
+    // let mut vec2 = Vec::from([1, 24, 235]);
+    // vec2.push(132);
+    // let a = vec2[1];
 
     // unsafe {
     //     let unaligned_ptr = (0x080003 as *mut u8);
