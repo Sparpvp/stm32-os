@@ -88,6 +88,8 @@ pub fn free(ptr: *mut u8) {
         zero_memory((*block).memory, (*block).size);
         init_metadata(block, (*block).size, false);
     };
+
+    // TODO: coalesce blocks
 }
 
 pub fn zalloc_block(size: u16) -> *mut u8 {
