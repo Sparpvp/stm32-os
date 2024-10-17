@@ -19,7 +19,7 @@ setzero:
     cmp r0, r1
     blo setzero // branch if r0 is less than r1
     
-    // set stack pointer to the top, right after the kernel stack (1K-long)
+    // set stack pointer to the top, right after the kernel stack (2K-long)
     // (remember that the stack is descending)
     ldr r2, =_stack_end
     mov sp, r2
