@@ -9,6 +9,7 @@ pub mod panic;
 pub mod peripherals;
 pub mod process;
 pub mod trap;
+pub mod scheduler;
 
 use allocator::memory::{free, zalloc_block, FreeList};
 use cortex_m_semihosting::hprintln;

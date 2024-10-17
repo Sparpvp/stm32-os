@@ -1,4 +1,4 @@
-use crate::allocator::memory::zalloc_block;
+use crate::allocator::memory::{free, zalloc_block};
 
 const STACK_SIZE: u16 = 328;
 static mut PID: u16 = 1;
@@ -52,7 +52,7 @@ impl Process {
         // starting address on RAM, we add its size to reference the top
         let stack_base = unsafe { zalloc_block(STACK_SIZE).byte_add(STACK_SIZE as usize) };
 
-        let mut proc = Process {
+        let proc = Process {
             ctx: Context::new_default(func_addr, stack_base),
             stack_base: stack_base,
             state: ProcessState::Ready,
@@ -64,6 +64,13 @@ impl Process {
             PID += 1;
         };
 
-        todo!()
+        proc
+    }
+}
+
+impl Drop for Process {
+    fn drop(&mut self) {
+        let bottom_stack: usize = self.stack_base as usize - STACK_SIZE as usize;
+        free(bottom_stack as *mut u8);
     }
 }
