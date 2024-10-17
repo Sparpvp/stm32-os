@@ -6,7 +6,7 @@ use crate::{
 };
 
 const STACK_SIZE: u16 = 328;
-static mut PID: u16 = 1;
+static mut NEW_PID: u16 = 1;
 
 #[repr(C)]
 pub struct Context {
@@ -51,7 +51,7 @@ impl Context {
 }
 
 impl Process {
-    pub fn new_proc(func: fn()) -> Self {
+    pub fn new(func: fn()) -> Self {
         let func_addr = func as usize;
         // Since the stack is descending-order, and the allocator gives us the
         // starting address on RAM, we add its size to reference the top
@@ -61,18 +61,18 @@ impl Process {
             ctx: Context::new_default(func_addr, stack_base),
             stack_base: stack_base,
             state: ProcessState::Ready,
-            pid: unsafe { PID },
+            pid: unsafe { NEW_PID },
         };
 
         unsafe {
             // Cortex M0 is single CPU, we don't have to deal with atomics.
-            PID += 1;
+            NEW_PID += 1;
         };
 
         proc
     }
 
-    pub fn schedule(self) {
+    pub fn enqueue(self) {
         let mut head = unsafe { &mut *(PROC_LIST.0) };
         while head.next != null_mut() {
             head = unsafe { &mut *(head.next) };
