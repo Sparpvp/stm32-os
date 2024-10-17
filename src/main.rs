@@ -8,8 +8,8 @@ pub mod allocator;
 pub mod panic;
 pub mod peripherals;
 pub mod process;
-pub mod trap;
 pub mod scheduler;
+pub mod trap;
 
 use allocator::memory::{free, zalloc_block, FreeList};
 use cortex_m_semihosting::hprintln;
@@ -18,18 +18,22 @@ use peripherals::{
     usart::UsartConfig,
     Config, Peripherals,
 };
+use scheduler::ProcListWrapper;
 
 #[no_mangle]
 extern "C" fn kmain() -> ! {
     // hprintln!("Xemo vivi!").unwrap();
 
     FreeList::init();
+    ProcListWrapper::init();
 
     // let heap1 = zalloc_block(50);
     // free(heap1);
     // let mut vec2 = Vec::from([1, 24, 235]);
     // vec2.push(132);
     // let a = vec2[1];
+    // let ptr1 = zalloc_block(12);
+    // let ptr2 = zalloc_block(20);
 
     // unsafe {
     //     let unaligned_ptr = (0x080003 as *mut u8);
@@ -44,10 +48,6 @@ extern "C" fn kmain() -> ! {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
     let p = Peripherals::take(rcc, config);
-
-    // FreeList::init();
-    // let ptr1 = unsafe { zalloc_block(12) };
-    // let ptr2 = unsafe { zalloc_block(20) };
 
     // p.usart.write('a' as u8, &p.rcc);
     // p.usart.read(&p.rcc);

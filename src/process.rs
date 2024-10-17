@@ -1,4 +1,9 @@
-use crate::allocator::memory::{free, zalloc_block};
+use core::{mem::size_of, ptr::null_mut};
+
+use crate::{
+    allocator::memory::{free, zalloc_block},
+    scheduler::{ScheduleList, PROC_LIST},
+};
 
 const STACK_SIZE: u16 = 328;
 static mut PID: u16 = 1;
@@ -65,6 +70,21 @@ impl Process {
         };
 
         proc
+    }
+
+    pub fn schedule(self) {
+        let mut head = unsafe { &mut *(PROC_LIST.0) };
+        while head.next != null_mut() {
+            head = unsafe { &mut *(head.next) };
+        }
+
+        let new_contact =
+            unsafe { &mut *(zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList) };
+
+        new_contact.proc = Some(self);
+        new_contact.next = null_mut();
+
+        head.next = new_contact;
     }
 }
 
