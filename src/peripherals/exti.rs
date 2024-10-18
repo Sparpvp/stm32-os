@@ -18,7 +18,7 @@ pub struct RegisterBlock {
 }
 
 impl EXTI {
-    pub fn init() {
+    pub fn unmask_usart2() {
         unsafe {
             // Activate USART2 interrupt on NVIC_ISER
             let nvic_iser = &mut *(NVIC_ISER as *mut RW<u32>);

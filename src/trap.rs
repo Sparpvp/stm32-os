@@ -1,11 +1,11 @@
-pub mod usart;
+pub mod irq_handlers;
 
 use core::{
     arch::asm,
     ptr::{read_volatile, write_volatile},
 };
 
-use usart::usart2_irq_receive;
+use irq_handlers::usart2_irq_receive;
 
 const ICSR_ADDR: u32 = 0xE000ED04;
 const NVIC_ICER: u32 = 0xE000E180;

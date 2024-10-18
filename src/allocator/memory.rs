@@ -18,6 +18,8 @@ static mut FREE_LIST: FreeListWrapper = FreeListWrapper(0 as *mut FreeList);
 
 impl FreeList {
     pub fn init() {
+        assert_eq!(unsafe { FREE_LIST.0 } == 0 as *mut FreeList, true);
+
         let heap_start = get_heap_start();
         let heap = heap_start as *mut Self;
         unsafe {

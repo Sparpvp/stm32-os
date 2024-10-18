@@ -7,6 +7,7 @@ use core::arch::asm;
 use alloc::vec::Vec;
 
 pub mod allocator;
+pub mod circ_buffer;
 pub mod panic;
 pub mod peripherals;
 pub mod process;
@@ -14,10 +15,11 @@ pub mod scheduler;
 pub mod trap;
 
 use allocator::memory::{free, zalloc_block, FreeList};
+use circ_buffer::CircularBuffer;
 use cortex_m_semihosting::hprintln;
 use peripherals::{
     rcc::{Rcc, RccConfig},
-    usart::UsartConfig,
+    usart::{UsartConfig, G_USART},
     Config, Peripherals,
 };
 use scheduler::ProcListWrapper;
@@ -49,6 +51,7 @@ extern "C" fn kmain() -> ! {
 
     FreeList::init();
     ProcListWrapper::init();
+    CircularBuffer::init();
 
     // let heap1 = zalloc_block(50);
     // free(heap1);
@@ -70,7 +73,7 @@ extern "C" fn kmain() -> ! {
     let config = Config {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
-    let p = Peripherals::take(rcc, config);
+    let p = Peripherals::init(rcc, config);
 
     // p.usart.write('a' as u8, &p.rcc);
     // p.usart.read(&p.rcc);
