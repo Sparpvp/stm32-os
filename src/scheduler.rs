@@ -18,7 +18,10 @@ impl ProcListWrapper {
             next: null_mut(),
         };
         unsafe {
-            *head = null_schedule;
+            // Initialize without dropping
+            // We don't have anything to drop since the value is 0
+            // It'd try to free a null pointer otherwise.
+            head.write(null_schedule);
             PROC_LIST = ProcListWrapper(head);
         }
     }
