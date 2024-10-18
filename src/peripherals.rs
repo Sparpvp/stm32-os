@@ -1,7 +1,9 @@
+use exti::EXTI;
 use gpio::GPIOA;
 use rcc::{Rcc, RCC};
 use usart::{Usart, UsartConfig};
 
+pub mod exti;
 pub mod gpio;
 pub mod rcc;
 pub mod usart;
@@ -22,6 +24,7 @@ impl<'a> Peripherals<'a> {
         let rcc_freeze = rcc.freeze();
         let gpioa = GPIOA::new();
         let usart = Usart::new(c.usart_config);
+        EXTI::init();
 
         Peripherals {
             rcc: rcc_freeze,

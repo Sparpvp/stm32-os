@@ -66,8 +66,8 @@ _setup_frame:
 _isr_vector:
     .word _stack_end
     .word _start
-    .word _trap_wrapper
-    .word _trap_wrapper
+    .word _trap_wrapper // NMI
+    .word _trap_wrapper // Hard Fault
     .word 0
     .word 0
     .word 0
@@ -75,11 +75,40 @@ _isr_vector:
     .word 0
     .word 0
     .word 0
-    .word _trap_wrapper
+    .word _trap_wrapper // SVCall
     .word 0
     .word 0
-    .word _trap_wrapper
-    .word _trap_wrapper
+    .word _trap_wrapper // PendSV
+    .word _trap_wrapper // SysTick
+    .word 0             // IRQ0. All IRQs < USART2 are currently unhandled.
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word _trap_wrapper // IRQ 28 - USART2
     /* 
         Here we're setting a procedure that calls the trap handler 
             giving the correct stack pointer for each vector entry.
