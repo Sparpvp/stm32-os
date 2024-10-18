@@ -2,6 +2,8 @@
 #![no_main]
 
 extern crate alloc;
+use core::arch::asm;
+
 use alloc::vec::Vec;
 
 pub mod allocator;
@@ -73,5 +75,9 @@ extern "C" fn kmain() -> ! {
     // p.usart.write('a' as u8, &p.rcc);
     // p.usart.read(&p.rcc);
 
-    loop {}
+    loop {
+        unsafe {
+            asm!("wfi");
+        }
+    }
 }

@@ -1,7 +1,11 @@
+pub mod usart;
+
 use core::{
     arch::asm,
     ptr::{read_volatile, write_volatile},
 };
+
+use usart::usart2_irq_receive;
 
 const ICSR_ADDR: u32 = 0xE000ED04;
 const NVIC_ICER: u32 = 0xE000E180;
@@ -48,6 +52,8 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         _setup_frame(stack_ptr)
     };
 
+    // If we want to return at a different location on main,
+    // We just need to modify the return program counter from here.
     let mut return_pc = unsafe { _get_pc(stack_ptr) };
 
     // Match on the Interrupt Control and State Register (ICSR)
@@ -75,6 +81,11 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         15 => {
             // SysTick
             todo!();
+        }
+        44 => {
+            // USART2 - The formula is IRQ(n-1) = n+15
+            // -> Hence IRQ28 is USART2, so IRQ(28) = IRQ(29-1) = 29+15 = 44
+            usart2_irq_receive();
         }
         _ => {
             panic!("Unhandled exception number: {}.\n", exception_number);
