@@ -48,6 +48,19 @@ impl Context {
             pc: func_addr,
         }
     }
+
+    fn new_kernel(func_addr: usize) -> Context {
+        let xpsr: usize = 1 << 24;
+        let freg: [usize; 3] = [xpsr, 0, 0]; // Use MAIN Stack Pointer (MSP)
+
+        Context {
+            general_regs: [0; 7],
+            flags_regs: freg,
+            curr_sp: 0, // Since there will only be the shell as a kernel proc, we just use the last MSP value.
+            lr: 0xFFFFFFFF, // Reset value
+            pc: func_addr,
+        }
+    }
 }
 
 impl Process {
@@ -66,6 +79,26 @@ impl Process {
 
         unsafe {
             // Cortex M0 is single CPU, we don't have to deal with atomics.
+            NEW_PID += 1;
+        };
+
+        proc
+    }
+
+    pub fn new_kernel_proc(func: fn()) -> Self {
+        // We will call this function only once
+        // to spawn the shell
+
+        let func_addr = func as usize;
+
+        let proc = Process {
+            ctx: Context::new_kernel(func_addr),
+            stack_base: null_mut(),
+            state: ProcessState::Ready,
+            pid: unsafe { NEW_PID },
+        };
+
+        unsafe {
             NEW_PID += 1;
         };
 

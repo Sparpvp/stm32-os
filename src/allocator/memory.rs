@@ -1,4 +1,4 @@
-use core::{marker::PhantomData, mem::size_of};
+use core::{marker::PhantomData, mem::size_of, ptr::null_mut};
 
 // use cortex_m_semihosting::hprintln;
 use crate::allocator::symbols;
@@ -18,7 +18,7 @@ static mut FREE_LIST: FreeListWrapper = FreeListWrapper(0 as *mut FreeList);
 
 impl FreeList {
     pub fn init() {
-        assert_eq!(unsafe { FREE_LIST.0 } == 0 as *mut FreeList, true);
+        assert_eq!(unsafe { FREE_LIST.0 }, null_mut());
 
         let heap_start = get_heap_start();
         let heap = heap_start as *mut Self;
