@@ -76,7 +76,6 @@ impl<'a> Usart<'a> {
     pub fn read_polling(&self, _rcc: &RCC) {
         while (self.rb.isr.read() & (1 << 5)) == 0 {}
         let r = (self.rb.rdr.read() & 0xFF) as u8;
-        // TODO: fix; hprintln seems to be bugged when trying to print a single char character.
-        // hprintln!("Received: {}", r).unwrap();
+        // TODO use yet-to-define print macro and print r
     }
 }

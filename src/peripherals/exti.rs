@@ -29,4 +29,11 @@ impl EXTI {
             exti.imr.modify(|i| (i | (1 << 28)) & !(1 << 27));
         }
     }
+
+    pub fn mask_usart2() {
+        unsafe {
+            let exti = &mut *(EXTI_ADDR as *mut RegisterBlock);
+            exti.imr.modify(|i| i & !(1 << 28));
+        }
+    }
 }

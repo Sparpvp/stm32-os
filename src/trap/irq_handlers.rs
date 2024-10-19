@@ -1,4 +1,4 @@
-use crate::peripherals::usart::G_USART;
+use crate::{circ_buffer::CircularBuffer, peripherals::usart::G_USART};
 
 pub fn usart2_irq_receive() {
     let usart = unsafe { G_USART.take().unwrap() };
@@ -8,6 +8,5 @@ pub fn usart2_irq_receive() {
     };
 
     // Append data into the circular buffer
-
-    todo!();
+    CircularBuffer::put(data);
 }
