@@ -38,6 +38,7 @@ SECTIONS {
    {
       PROVIDE(_bss_start = .);
       *(.bss)
+      *(.bss.*)
       . = ALIGN(4);
       PROVIDE(_bss_end = .);
    }> RAM
