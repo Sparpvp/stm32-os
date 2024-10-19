@@ -12,6 +12,7 @@ pub mod panic;
 pub mod peripherals;
 pub mod process;
 pub mod scheduler;
+pub mod shell;
 pub mod trap;
 
 use allocator::memory::{free, zalloc_block, FreeList};
@@ -22,7 +23,9 @@ use peripherals::{
     usart::{UsartConfig, G_USART},
     Config, Peripherals,
 };
+use process::Process;
 use scheduler::ProcListWrapper;
+use shell::shell;
 
 #[no_mangle]
 extern "C" fn kmain() -> ! {
@@ -49,10 +52,6 @@ extern "C" fn kmain() -> ! {
         So cool!
     */
 
-    FreeList::init();
-    ProcListWrapper::init();
-    CircularBuffer::init();
-
     // let heap1 = zalloc_block(50);
     // free(heap1);
     // let mut vec2 = Vec::from([1, 24, 235]);
@@ -60,11 +59,17 @@ extern "C" fn kmain() -> ! {
     // let a = vec2[1];
     // let ptr1 = zalloc_block(12);
     // let ptr2 = zalloc_block(20);
-
     // unsafe {
     //     let unaligned_ptr = (0x080003 as *mut u8);
     //     *unaligned_ptr = 5; // Hard Fault
     // }
+    // p.usart.write('a' as u8, &p.rcc);
+    // p.usart.read(&p.rcc);
+
+    FreeList::init();
+    ProcListWrapper::init();
+    CircularBuffer::init();
+    Process::new_kernel_proc(shell).enqueue();
 
     let rcc = Rcc::new(RccConfig {
         sysclk: 8_000_000,
@@ -74,9 +79,6 @@ extern "C" fn kmain() -> ! {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
     let p = Peripherals::init(rcc, config);
-
-    // p.usart.write('a' as u8, &p.rcc);
-    // p.usart.read(&p.rcc);
 
     loop {
         unsafe {

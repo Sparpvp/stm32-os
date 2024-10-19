@@ -12,7 +12,7 @@ pub static mut PROC_LIST: ProcListWrapper = ProcListWrapper(0 as *mut ScheduleLi
 
 impl ProcListWrapper {
     pub fn init() {
-        assert_eq!(unsafe { PROC_LIST.0 } == 0 as *mut ScheduleList, true);
+        assert_eq!(unsafe { PROC_LIST.0 }, null_mut());
 
         let head = zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList;
         let null_schedule = ScheduleList {
