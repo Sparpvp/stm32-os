@@ -7,6 +7,7 @@ pub mod exti;
 pub mod gpio;
 pub mod rcc;
 pub mod usart;
+pub mod core;
 
 pub struct Peripherals<'a> {
     pub rcc: RCC,

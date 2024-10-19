@@ -24,7 +24,7 @@ use peripherals::{
     Config, Peripherals,
 };
 use process::Process;
-use scheduler::ProcListWrapper;
+use scheduler::Scheduler;
 use shell::shell;
 
 #[no_mangle]
@@ -38,16 +38,17 @@ extern "C" fn kmain() -> ! {
                 the input received from USART via interrupts, and then implement a functionality
                     that removes a process from the scheduler list, if the user asked to do so.
         => This comes with implementing some things
-        1. USART Interrupts
-        2. Circular Buffer for the stdin
-        Note that pending interrupts while PRIMASK is set to 1 will be executed right after
-            PRIMASK is resetted to 0. Hence the USART data isn't lost.
+        TICK 1. USART Interrupts
+        TICK 2. Circular Buffer for the stdin
+            Note that pending interrupts while PRIMASK is set to 1 will be executed right after
+                PRIMASK is resetted to 0. Hence the USART data isn't lost.
 
-        - Implement SysTick interrupt to do... context switches! using a Round-Robin algorithm.
+        pending - Implement SysTick interrupt to do... context switches! using a Round-Robin algorithm.
             I just keep an internal static that is "mod-ed" modulo PROC_NUM when I get to the end
                 of the list. In simpler words, once I get to the end of the list, I reset the
                     counter to 0, such that the scheduler will grep all the procs from the beginning.
         - Context Switches indeed
+        - print! macro writing on USART
 
         So cool!
     */
@@ -67,7 +68,7 @@ extern "C" fn kmain() -> ! {
     // p.usart.read(&p.rcc);
 
     FreeList::init();
-    ProcListWrapper::init();
+    Scheduler::init();
     CircularBuffer::init();
     Process::new_kernel_proc(shell).enqueue();
 

@@ -114,7 +114,7 @@ impl Process {
         let new_contact =
             unsafe { &mut *(zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList) };
 
-        new_contact.proc = Some(self);
+        new_contact.proc.write(self);
         new_contact.next = null_mut();
 
         head.next = new_contact;
