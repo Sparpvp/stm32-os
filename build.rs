@@ -15,6 +15,7 @@ fn main() {
     println!("cargo:rerun-if-changed=memory.x");
     println!("cargo:rerun-if-changed=src/asm/boot.S");
     println!("cargo:rerun-if-changed=src/asm/trap.S");
+    println!("cargo:rerun-if-changed=src/asm/context_switch.S");
 
     println!("cargo:rustc-link-arg=--nmagic");
     println!("cargo:rustc-link-arg=-Tmemory.x");
