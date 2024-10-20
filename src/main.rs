@@ -19,6 +19,7 @@ use allocator::memory::{free, zalloc_block, FreeList};
 use circ_buffer::CircularBuffer;
 use cortex_m_semihosting::hprintln;
 use peripherals::{
+    core::{SysTick, IPR, IT_PENDSV},
     rcc::{Rcc, RccConfig},
     usart::{UsartConfig, G_USART},
     Config, Peripherals,
@@ -71,6 +72,7 @@ extern "C" fn kmain() -> ! {
     Scheduler::init();
     CircularBuffer::init();
     Process::new_kernel_proc(shell).enqueue();
+    IPR::set_priority(IT_PENDSV, 255);
 
     let rcc = Rcc::new(RccConfig {
         sysclk: 8_000_000,
@@ -80,6 +82,8 @@ extern "C" fn kmain() -> ! {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
     let p = Peripherals::init(rcc, config);
+
+    SysTick::enable();
 
     loop {
         unsafe {

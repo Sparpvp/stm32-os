@@ -1,13 +1,18 @@
+use core::mem::size_of;
+
 use volatile_register::RW;
 
 const SYST_CSR: usize = 0xE000_E010;
 const SYST_RVR: usize = 0xE000_E014;
-const SYST_CVR: usize = 0xE000_E018;
+const IPR_0_BASE: usize = 0xE000_E400;
 
-pub struct SysTick {
-    csr: u32,
-    rvr: u32,
-    cvr: u32,
+pub const IT_PENDSV: u8 = 14;
+
+pub struct SysTick;
+
+#[repr(C)]
+pub struct IPR {
+    pri_n: RW<[u8; 4]>,
 }
 
 impl SysTick {
@@ -26,4 +31,19 @@ impl SysTick {
         };
     }
 }
- 
+
+impl IPR {
+    pub fn set_priority(interrupt_num: u8, priority: u8) {
+        let ipr_n = interrupt_num / 4;
+        let ipr_offset = (interrupt_num % 4) as usize;
+
+        let ipr_reg =
+            unsafe { &mut *((IPR_0_BASE + (ipr_n as usize * size_of::<u32>())) as *mut IPR) };
+        unsafe {
+            ipr_reg.pri_n.modify(|mut m| {
+                m[ipr_offset] = priority;
+                m
+            });
+        };
+    }
+}

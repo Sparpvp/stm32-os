@@ -22,5 +22,6 @@ fn main() {
     cc::Build::new()
         .file("src/asm/boot.S")
         .file("src/asm/trap.S")
+        .file("src/asm/context_switch.S")
         .compile("asm-boot-trap");
 }
