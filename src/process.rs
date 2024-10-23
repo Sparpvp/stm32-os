@@ -12,13 +12,14 @@ static mut NEW_PID: u16 = 1;
 pub struct Context {
     // R0 -> R7
     pub general_regs: [usize; 7],
-    curr_sp: usize,
-    lr: usize,
-    pc: usize,
+    pub curr_sp: usize,
+    pub lr: usize,
+    pub pc: usize,
     // PSR, PRIMASK, CONTROL
     pub flags_regs: [usize; 3],
 }
 
+#[repr(C)]
 pub enum ProcessState {
     Running,
     Ready,
@@ -28,11 +29,12 @@ pub enum ProcessState {
 
 #[repr(C)]
 pub struct Process {
-    ctx: Context,
-    stack_base: *mut u8, // Descending type; points to the top of the allocated stack
-    state: ProcessState,
-    pid: u16,
+    pub ctx: Context,
+    pub stack_base: *mut u8, // Descending type; points to the top of the allocated stack
+    pub state: ProcessState,
+    pub pid: u16,
 }
+pub struct ProcessSpawner;
 
 impl Context {
     fn new_default(func_addr: usize, stack_base: *mut u8) -> Context {
@@ -63,7 +65,22 @@ impl Context {
     }
 }
 
+impl ProcessSpawner {
+    pub fn new(self, func: fn()) -> Self {
+        Process::new(func).enqueue();
+        self
+    }
+
+    pub fn new_kernel(self, func: fn()) {
+        Process::new_kernel_proc(func).enqueue();
+    }
+}
+
 impl Process {
+    pub fn spawner() -> ProcessSpawner {
+        ProcessSpawner
+    }
+
     pub fn new(func: fn()) -> Self {
         let func_addr = func as usize;
         // Since the stack is descending-order, and the allocator gives us the

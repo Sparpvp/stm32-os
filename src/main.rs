@@ -44,11 +44,17 @@ extern "C" fn kmain() -> ! {
             Note that pending interrupts while PRIMASK is set to 1 will be executed right after
                 PRIMASK is resetted to 0. Hence the USART data isn't lost.
 
-        pending - Implement SysTick interrupt to do... context switches! using a Round-Robin algorithm.
+        TICK - Implement SysTick interrupt to do... context switches! using a Round-Robin algorithm.
             I just keep an internal static that is "mod-ed" modulo PROC_NUM when I get to the end
                 of the list. In simpler words, once I get to the end of the list, I reset the
                     counter to 0, such that the scheduler will grep all the procs from the beginning.
-        - Context Switches indeed
+        pending - Context Switches indeed
+            => This is going to be a pain
+            - Ensure that PendSV handler is being called
+            - Ensure that PendSV is able to return correctly (disabling interrupt state, popping the interrupt stack frame)
+            - Do I have to write the entire context switch in assembly?
+                - That's crazy! How do I handle MaybeUninit<Stuff>.stuff.stuff[index] type of thing?
+
         - print! macro writing on USART
 
         So cool!
@@ -68,12 +74,6 @@ extern "C" fn kmain() -> ! {
     // p.usart.write('a' as u8, &p.rcc);
     // p.usart.read(&p.rcc);
 
-    FreeList::init();
-    Scheduler::init();
-    CircularBuffer::init();
-    Process::new_kernel_proc(shell).enqueue();
-    IPR::set_priority(IT_PENDSV, 255);
-
     let rcc = Rcc::new(RccConfig {
         sysclk: 8_000_000,
         pclk: 8_000_000,
@@ -81,7 +81,14 @@ extern "C" fn kmain() -> ! {
     let config = Config {
         usart_config: UsartConfig { baud_rate: 9600 },
     };
+
+    FreeList::init();
+    Scheduler::init();
+    CircularBuffer::init();
+    IPR::set_priority(IT_PENDSV, 43); // We don't want USART to preempt PendSV
     let p = Peripherals::init(rcc, config);
+
+    Process::spawner().new_kernel(shell);
 
     SysTick::enable();
 

@@ -1,10 +1,11 @@
 use core::{
-    mem::{size_of, MaybeUninit},
-    ptr::null_mut,
+    mem::{self, size_of, MaybeUninit},
+    ptr::{self, null_mut},
 };
 
 use crate::{allocator::memory::zalloc_block, process::Process};
 
+#[repr(C)]
 pub struct ScheduleList {
     pub proc: MaybeUninit<Process>,
     pub next: *mut ScheduleList,
@@ -12,7 +13,9 @@ pub struct ScheduleList {
 
 pub struct Scheduler(pub *mut ScheduleList);
 pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
-pub static mut CURR_PROC: *mut ScheduleList = null_mut();
+#[no_mangle]
+#[used]
+pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
 
 impl Scheduler {
     pub fn init() {
@@ -28,16 +31,19 @@ impl Scheduler {
             // We don't have anything to drop since the value is 0
             // It'd try to free a null pointer otherwise.
             head.write(null_schedule);
-            CURR_PROC = head;
+            CURR_PROC.assume_init_mut().next = (*head).next;
             PROC_LIST = Scheduler(head);
         }
     }
 
     pub unsafe fn next_proc() {
-        if (*CURR_PROC).next == null_mut() {
-            CURR_PROC = PROC_LIST.0; // Reset to the head
+        let proc = CURR_PROC.assume_init_mut();
+
+        if proc.next == null_mut() {
+            let _ = mem::replace(proc, ptr::read(PROC_LIST.0));
         } else {
-            CURR_PROC = (*CURR_PROC).next;
+            let next_proc = ptr::read(proc.next);
+            let _ = mem::replace(proc, next_proc);
         }
     }
 }

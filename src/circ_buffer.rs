@@ -2,7 +2,7 @@ use cortex_m_semihosting::hprintln;
 
 use crate::peripherals::exti;
 
-const CAP: usize = 40;
+const CAP: usize = 30;
 
 pub struct CircularBuffer {
     buf: [u8; CAP],
@@ -20,7 +20,7 @@ impl CircularBuffer {
         assert_eq!(unsafe { G_BUFFER.is_none() }, true);
 
         let cb = CircularBuffer {
-            buf: [0; 40],
+            buf: [0; CAP],
             read_index: 0,
             write_index: 0,
         };
