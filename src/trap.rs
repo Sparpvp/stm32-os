@@ -6,11 +6,18 @@ use core::{
 };
 
 use irq_handlers::usart2_irq_receive;
+use volatile_register::RW;
 
 use crate::scheduler::{Scheduler, CURR_PROC};
 
 const ICSR_ADDR: u32 = 0xE000ED04;
 const NVIC_ICER: u32 = 0xE000E180;
+
+extern "C" {
+    fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
+    fn _update_pc(pc: u32, stack_ptr: *const u32);
+    fn _get_pc(stack_ptr: *const u32) -> u32;
+}
 
 #[inline(always)]
 unsafe fn get_stack_alignment() -> usize {
@@ -25,10 +32,12 @@ unsafe fn get_stack_alignment() -> usize {
     remainder
 }
 
-extern "C" {
-    fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
-    fn _update_pc(pc: u32, stack_ptr: *const u32);
-    fn _get_pc(stack_ptr: *const u32) -> u32;
+fn pend_sv_set() {
+    // Bit 28: PENDSVSET
+    let icsr = unsafe { &mut *(ICSR_ADDR as *mut RW<u32>) };
+    unsafe {
+        icsr.modify(|m| m | (1 << 28));
+    };
 }
 
 #[no_mangle]
@@ -79,29 +88,7 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         15 => {
             // SysTick
             // Do context switch
-            unsafe {
-                // Save current status into cur_proc
-                let cur_proc = (*CURR_PROC).proc.assume_init_mut();
-                todo!();
-
-                // NOTICE!
-                // The code commented below has to be executed on PendSV.
-                // Its purpose is exactly to defer some action, in this case the ctx switch.
-                // So we first save on the SysTick interrupt the current context, then
-                // We perform the proper context switch on PendSV.
-                // So, probably, we'll replace the handler for PendSV directly in assembly.
-                // It'll be tricky but seems solid.
-                // I hope that bx lr will be enough to return then.
-                // PendSV then needs to be set at lower priority so when this interrupt
-                // handler will unmask PRIMASK, PendSV WON'T immediately interrupt us.
-
-                // // Replace current CPU registers with this one
-                // // And adjust stack pointer, eventually also the control register
-                // // (MSP might be used for the shell)
-                // Scheduler::next_proc();
-                // let next_proc = (*CURR_PROC).proc.assume_init_ref();
-                // todo!()
-            }
+            pend_sv_set();
         }
         44 => {
             // USART2 - The formula is IRQ(n-1) = n+15
