@@ -36,6 +36,7 @@ impl Scheduler {
         }
     }
 
+    #[no_mangle]
     pub unsafe fn next_proc() {
         let proc = CURR_PROC.assume_init_mut();
 

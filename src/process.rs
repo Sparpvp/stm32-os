@@ -11,7 +11,7 @@ static mut NEW_PID: u16 = 1;
 #[repr(C)]
 pub struct Context {
     // R0 -> R7
-    pub general_regs: [usize; 7],
+    pub general_regs: [usize; 8],
     pub curr_sp: usize,
     pub lr: usize,
     pub pc: usize,
@@ -43,7 +43,7 @@ impl Context {
         let freg: [usize; 3] = [xpsr, 0, control];
 
         Context {
-            general_regs: [0; 7],
+            general_regs: [0; 8],
             flags_regs: freg,
             curr_sp: stack_base as usize,
             lr: 0xFFFFFFFF, // Reset value
@@ -56,7 +56,7 @@ impl Context {
         let freg: [usize; 3] = [xpsr, 0, 0]; // Use MAIN Stack Pointer (MSP)
 
         Context {
-            general_regs: [0; 7],
+            general_regs: [0; 8],
             flags_regs: freg,
             curr_sp: 0, // Since there will only be the shell as a kernel proc, we just use the last MSP value.
             lr: 0xFFFFFFFF, // Reset value
