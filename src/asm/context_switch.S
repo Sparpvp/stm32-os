@@ -10,6 +10,11 @@ _context_switch:
     CPSID i
 
     PUSH {r0}
+    LDR r0, =FIRST_CTX_SWITCH
+    LDRB r0, [r0]
+    CMP r0, #1
+    BEQ restore_context
+
     LDR r0, =CURR_PROC
     ADD r0, r0, #4
 
@@ -86,8 +91,15 @@ str_msp:
     STR r0, [r1]
 
     // Now we'll load the next process' context
+    
+restore_context:
+    // Reset first context switch flag
+    LDR r0, =FIRST_CTX_SWITCH
+    MOV r1, #0
+    STRB r1, [r0]
 
     // Invoke the scheduler and put the next process into CURR_PROC
+    PUSH {lr}       // Save LR in r3 to return
     LDR r0, =next_proc
     BLX r0
 
@@ -95,6 +107,7 @@ str_msp:
     LDR r0, =CURR_PROC
 
     // Modify the interruption stack frame with the new process context
+    ADD sp, sp, #4  // Adjust stack pointer to the stacking frame
     LDR r1, [r0]    // Get then store r0
     STR r1, [sp]
     ADD sp, sp, #4
@@ -121,6 +134,7 @@ str_msp:
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store PSR
     STR r1, [sp]
+    SUB sp, sp, #4  // Reset the previous 4 bytes added
 
     // From now r0-r3 are scratchable
     // Reset stack pointer to the base during the interrupt
@@ -146,19 +160,23 @@ str_msp:
     ADD r0, r0, #20
     // If [r0] & 0b10 is 1, we'll be using the psp
     LDR r1, [r0]
+    SUB r0, r0, #20
     MSR CONTROL, r1
     MOV r2, #0b10
     TST r1, r2
     BNE return_psp
     B return
 return_psp:
-    SUB r0, r0, #20
     LDR r1, [r0]    // r0 points to curr_sp
     MSR psp, r1
 return:
     ADD r0, r0, #12
     LDR r1, [r0]
     MSR APSR, r1
+
+    // Restore the previously-saved link register
+    POP {r3}
+    MOV lr, r3
 
     CPSIE i
     BX lr

@@ -8,10 +8,12 @@ use core::{
 use irq_handlers::usart2_irq_receive;
 use volatile_register::RW;
 
-use crate::scheduler::{Scheduler, CURR_PROC};
-
 const ICSR_ADDR: u32 = 0xE000ED04;
 const NVIC_ICER: u32 = 0xE000E180;
+
+#[no_mangle]
+#[used]
+static mut FIRST_CTX_SWITCH: bool = true; // Resetted in ASM
 
 extern "C" {
     fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
