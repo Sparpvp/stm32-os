@@ -20,6 +20,7 @@ set backtrace limit 32
 
 # *try* to stop at the user entry point (it might be gone due to inlining)
 # break main
+break _context_switch
 
 # monitor arm semihosting enable
 

@@ -8,6 +8,18 @@ _start:
     /* on Cortex-M0 we don't need to halt 
         other threads since there aren't any */
 
+    /* copy data segment from flash to ram */
+    ldr r0, =_flash_data_start
+    ldr r1, =_data_start
+    ldr r3, =_data_end
+copy_data:
+    ldrb r2, [r0]
+    strb r2, [r1]
+    add r0, r0, #1
+    add r1, r1, #1
+    cmp r1, r3
+    blo copy_data // loop if there's more data
+
     /* clear the bss as the C runtime requires it
         (bss is aligned to 4 bytes) */
     ldr r0, =_bss_start

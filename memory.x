@@ -18,6 +18,7 @@ SECTIONS {
    {
       *(.text.boot)
       *(.text)
+      *(.text.*)
       . = ALIGN(4);
    }> FLASH
 
@@ -30,8 +31,12 @@ SECTIONS {
 
    .data : 
    {
+      PROVIDE(_flash_data_start = LOADADDR(.data));
+      PROVIDE(_data_start = .);
       *(.data)
+      *(.data.*)
       . = ALIGN(4);
+      PROVIDE(_data_end = .);
    }> RAM AT> FLASH
 
    .bss :
