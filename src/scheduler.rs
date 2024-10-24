@@ -15,7 +15,7 @@ pub struct Scheduler(pub *mut ScheduleList);
 pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
 #[no_mangle]
 #[used]
-pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
+pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::zeroed();
 
 impl Scheduler {
     pub fn init() {
@@ -23,7 +23,7 @@ impl Scheduler {
 
         let head = zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList;
         let null_schedule = ScheduleList {
-            proc: MaybeUninit::uninit(),
+            proc: MaybeUninit::zeroed(),
             next: null_mut(),
         };
         unsafe {
@@ -31,7 +31,6 @@ impl Scheduler {
             // We don't have anything to drop since the value is 0
             // It'd try to free a null pointer otherwise.
             head.write(null_schedule);
-            CURR_PROC.assume_init_mut().next = (*head).next;
             PROC_LIST = Scheduler(head);
         }
     }
@@ -40,7 +39,8 @@ impl Scheduler {
     pub unsafe fn next_proc() {
         let proc = CURR_PROC.assume_init_mut();
 
-        if proc.next == null_mut() {
+        if proc.next.is_null() {
+            let read = ptr::read(PROC_LIST.0);
             let _ = mem::replace(proc, ptr::read(PROC_LIST.0));
         } else {
             let next_proc = ptr::read(proc.next);

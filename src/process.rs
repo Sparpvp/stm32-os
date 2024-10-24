@@ -1,8 +1,11 @@
-use core::{mem::size_of, ptr::null_mut};
+use core::{
+    mem::size_of,
+    ptr::{self, null_mut},
+};
 
 use crate::{
     allocator::memory::{free, zalloc_block},
-    scheduler::{ScheduleList, PROC_LIST},
+    scheduler::{ScheduleList, CURR_PROC, PROC_LIST},
 };
 
 const STACK_SIZE: u16 = 328;
@@ -128,13 +131,21 @@ impl Process {
             head = unsafe { &mut *(head.next) };
         }
 
-        let new_contact =
+        let new_schedule =
             unsafe { &mut *(zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList) };
 
-        new_contact.proc.write(self);
-        new_contact.next = null_mut();
+        new_schedule.proc.write(self);
+        new_schedule.next = null_mut();
 
-        head.next = new_contact;
+        unsafe {
+            *head = ptr::read(new_schedule);
+        };
+
+        unsafe {
+            if CURR_PROC.as_ptr().is_null() {
+                CURR_PROC.write(ptr::read(new_schedule));
+            }
+        }
     }
 }
 
