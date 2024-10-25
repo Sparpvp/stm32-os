@@ -27,7 +27,17 @@ impl SysTick {
             // Here we set the reload value. 24 bits available
             // We'll keep an inside joke value as reload time
             // With 8MHz SYSCLK, its a ~15ms time slice
-            rvr.modify(|m| m | 0xBEEF * 3);
+            rvr.write(0xBEEF * 3);
+        };
+    }
+
+    // Max reload value must be contained in 24 bits
+    pub fn modify_reload(reload: u32) {
+        assert_eq!(reload & !(2 ^ 24 - 1) == 0, true);
+
+        let rvr = unsafe { &mut *(SYST_RVR as *mut RW<u32>) };
+        unsafe {
+            rvr.write(reload);
         };
     }
 }
