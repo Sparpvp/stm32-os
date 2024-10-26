@@ -2,7 +2,7 @@
 authors = ["Sparpvp <74677348+Sparpvp@users.noreply.github.com>"]
 edition = "2018"
 readme = "README.md"
-name = "booting"
+name = "stm32-os"
 version = "0.1.0"
 
 [dependencies]
@@ -13,7 +13,7 @@ volatile-register = "0.2.2"
 cc = "1.0"
 
 [[bin]]
-name = "booting"
+name = "stm32-os"
 test = false
 bench = false
 

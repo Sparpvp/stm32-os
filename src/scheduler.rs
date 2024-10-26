@@ -3,7 +3,10 @@ use core::{
     ptr::{self, null_mut},
 };
 
-use crate::{process::Process, trap::FIRST_CTX_SWITCH};
+use crate::{
+    process::{Process, ProcessState},
+    trap::FIRST_CTX_SWITCH,
+};
 
 #[repr(C)]
 pub struct ScheduleList {
@@ -20,15 +23,19 @@ pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
 impl Scheduler {
     #[no_mangle]
     pub unsafe fn next_proc() {
-        let proc = CURR_PROC.assume_init_mut();
+        let curr_proc = CURR_PROC.assume_init_mut();
+        curr_proc.proc.assume_init_mut().state = ProcessState::Ready;
 
-        if FIRST_CTX_SWITCH || proc.next == null_mut() {
+        let mut next_proc: ScheduleList;
+        if FIRST_CTX_SWITCH || curr_proc.next == null_mut() {
             // Put the head as the new process
-            let _ = mem::replace(proc, ptr::read(PROC_LIST.0));
+            next_proc = ptr::read(PROC_LIST.0);
         } else {
             // Switch to next process since there's one.
-            let next_proc = ptr::read(proc.next);
-            let _ = mem::replace(proc, next_proc);
+            next_proc = ptr::read(curr_proc.next);
         }
+
+        next_proc.proc.assume_init_mut().state = ProcessState::Running;
+        let _ = mem::replace(curr_proc, next_proc);
     }
 }
