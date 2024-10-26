@@ -4,8 +4,6 @@
 extern crate alloc;
 use core::arch::asm;
 
-use alloc::vec::Vec;
-
 pub mod allocator;
 pub mod circ_buffer;
 pub mod panic;
@@ -13,20 +11,21 @@ pub mod peripherals;
 pub mod process;
 pub mod scheduler;
 pub mod shell;
+pub mod tasks;
 pub mod trap;
 
 use allocator::memory::{free, zalloc_block, FreeList};
 use circ_buffer::CircularBuffer;
-use cortex_m_semihosting::hprintln;
 use peripherals::{
     core::{SysTick, IPR, IT_PENDSV},
     rcc::{Rcc, RccConfig},
-    usart::{UsartConfig, G_USART},
+    usart::UsartConfig,
     Config, Peripherals,
 };
 use process::Process;
 use scheduler::Scheduler;
 use shell::shell;
+use tasks::*;
 
 #[no_mangle]
 extern "C" fn kmain() -> ! {
@@ -83,12 +82,11 @@ extern "C" fn kmain() -> ! {
     };
 
     FreeList::init();
-    Scheduler::init();
     CircularBuffer::init();
     IPR::set_priority(IT_PENDSV, 43); // We don't want USART to preempt PendSV
     let p = Peripherals::init(rcc, config);
 
-    Process::spawner().new_kernel(shell);
+    Process::spawner().new(beef).new_kernel(shell);
 
     SysTick::enable();
 

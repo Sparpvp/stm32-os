@@ -3,7 +3,7 @@ use core::{
     ptr::{self, null_mut},
 };
 
-use crate::{allocator::memory::zalloc_block, process::Process};
+use crate::{allocator::memory::zalloc_block, process::Process, trap::FIRST_CTX_SWITCH};
 
 #[repr(C)]
 pub struct ScheduleList {
@@ -15,34 +15,18 @@ pub struct Scheduler(pub *mut ScheduleList);
 pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
 #[no_mangle]
 #[used]
-pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::zeroed();
+pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
 
 impl Scheduler {
-    pub fn init() {
-        assert_eq!(unsafe { PROC_LIST.0 }, null_mut());
-
-        let head = zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList;
-        let null_schedule = ScheduleList {
-            proc: MaybeUninit::zeroed(),
-            next: null_mut(),
-        };
-        unsafe {
-            // Initialize without dropping
-            // We don't have anything to drop since the value is 0
-            // It'd try to free a null pointer otherwise.
-            head.write(null_schedule);
-            PROC_LIST = Scheduler(head);
-        }
-    }
-
     #[no_mangle]
     pub unsafe fn next_proc() {
         let proc = CURR_PROC.assume_init_mut();
 
-        if proc.next.is_null() {
-            let read = ptr::read(PROC_LIST.0);
+        if FIRST_CTX_SWITCH || proc.next == null_mut() {
+            // Put the head as the new process
             let _ = mem::replace(proc, ptr::read(PROC_LIST.0));
         } else {
+            // Switch to next process since there's one.
             let next_proc = ptr::read(proc.next);
             let _ = mem::replace(proc, next_proc);
         }

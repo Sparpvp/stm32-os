@@ -93,15 +93,15 @@ str_msp:
     // Now we'll load the next process' context
     
 restore_context:
-    // Reset first context switch flag
-    LDR r0, =FIRST_CTX_SWITCH
-    MOV r1, #0
-    STRB r1, [r0]
-
     // Invoke the scheduler and put the next process into CURR_PROC
     PUSH {lr}       // Save LR in r3 to return
     LDR r0, =next_proc
     BLX r0
+
+    // Reset first context switch flag
+    LDR r0, =FIRST_CTX_SWITCH
+    MOV r1, #0
+    STRB r1, [r0]
 
     // Get the new to-be-loaded process address
     LDR r0, =CURR_PROC

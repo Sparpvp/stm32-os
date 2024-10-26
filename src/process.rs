@@ -5,7 +5,7 @@ use core::{
 
 use crate::{
     allocator::memory::{free, zalloc_block},
-    scheduler::{ScheduleList, CURR_PROC, PROC_LIST},
+    scheduler::{ScheduleList, Scheduler, CURR_PROC, PROC_LIST},
 };
 
 const STACK_SIZE: u16 = 328;
@@ -76,6 +76,12 @@ impl ProcessSpawner {
 
     pub fn new_kernel(self, func: fn()) {
         Process::new_kernel_proc(func).enqueue();
+
+        unsafe {
+            // Initialize the current process with the first one
+            // when we're terminating the builder
+            CURR_PROC.write(ptr::read(PROC_LIST.0));
+        }
     }
 }
 
@@ -126,25 +132,21 @@ impl Process {
     }
 
     pub fn enqueue(self) {
-        let mut head = unsafe { &mut *(PROC_LIST.0) };
-        while head.next != null_mut() {
-            head = unsafe { &mut *(head.next) };
-        }
-
         let new_schedule =
             unsafe { &mut *(zalloc_block(size_of::<ScheduleList>() as u16) as *mut ScheduleList) };
-
         new_schedule.proc.write(self);
         new_schedule.next = null_mut();
 
-        unsafe {
-            *head = ptr::read(new_schedule);
-        };
-
-        unsafe {
-            if CURR_PROC.as_ptr().is_null() {
-                CURR_PROC.write(ptr::read(new_schedule));
+        if unsafe { PROC_LIST.0 } == null_mut() {
+            unsafe {
+                PROC_LIST = Scheduler(new_schedule);
             }
+        } else {
+            let mut head = unsafe { &mut *(PROC_LIST.0) };
+            while head.next != null_mut() {
+                head = unsafe { &mut *(head.next) };
+            }
+            head.next = new_schedule;
         }
     }
 }

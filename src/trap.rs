@@ -13,7 +13,7 @@ const NVIC_ICER: u32 = 0xE000E180;
 
 #[no_mangle]
 #[used]
-static mut FIRST_CTX_SWITCH: bool = true; // Resetted in ASM
+pub static mut FIRST_CTX_SWITCH: bool = true; // Resetted in ASM
 
 extern "C" {
     fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
