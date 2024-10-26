@@ -78,7 +78,6 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
         );
     }
 
-    // TODO: Consider returning just the memory block not freelist
     tmp_head
 }
 

@@ -14,7 +14,7 @@ pub mod shell;
 pub mod tasks;
 pub mod trap;
 
-use allocator::memory::{free, zalloc_block, FreeList};
+use allocator::memory::FreeList;
 use circ_buffer::CircularBuffer;
 use peripherals::{
     core::{SysTick, IPR, IT_PENDSV},
@@ -23,7 +23,6 @@ use peripherals::{
     Config, Peripherals,
 };
 use process::Process;
-use scheduler::Scheduler;
 use shell::shell;
 use tasks::*;
 
@@ -59,20 +58,6 @@ extern "C" fn kmain() -> ! {
         So cool!
     */
 
-    // let heap1 = zalloc_block(50);
-    // free(heap1);
-    // let mut vec2 = Vec::from([1, 24, 235]);
-    // vec2.push(132);
-    // let a = vec2[1];
-    // let ptr1 = zalloc_block(12);
-    // let ptr2 = zalloc_block(20);
-    // unsafe {
-    //     let unaligned_ptr = (0x080003 as *mut u8);
-    //     *unaligned_ptr = 5; // Hard Fault
-    // }
-    // p.usart.write('a' as u8, &p.rcc);
-    // p.usart.read(&p.rcc);
-
     let rcc = Rcc::new(RccConfig {
         sysclk: 8_000_000,
         pclk: 8_000_000,
@@ -84,7 +69,7 @@ extern "C" fn kmain() -> ! {
     FreeList::init();
     CircularBuffer::init();
     IPR::set_priority(IT_PENDSV, 43); // We don't want USART to preempt PendSV
-    let p = Peripherals::init(rcc, config);
+    let _p = Peripherals::init(rcc, config);
 
     Process::spawner().new(beef).new_kernel(shell);
 

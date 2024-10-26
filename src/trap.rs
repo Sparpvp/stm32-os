@@ -45,14 +45,12 @@ fn pend_sv_set() {
 #[no_mangle]
 extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     /*
-        La procedura di ritorno in ARMv6-M è diversa da quasi tutte le altre architetture.
-        Pertanto, fare riferimento a QUESTE procedure:
+        The return procedure for ARMv6-M is different from almost all the other architectures.
+        Hence, I have to refer to THESE docs:
             -> https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-m-and-armv7-m-profiles/handling-an-exception
-
-        e NON queste procedure, che sono per le altre architetture, ossia quelle che pensavo
-            fossero quelle giuste finora.
-            quindi, NON: https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/handling-an-exception
-            e NON: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
+        and NOT these, which are for the other architectures
+            so, NOT: https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/handling-an-exception
+            and NOT: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
     assert_eq!(unsafe { get_stack_alignment() == 0 }, true);
 
@@ -66,7 +64,7 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     };
 
     // If we want to return at a different location on main,
-    // We just need to modify the return program counter from here.
+    //  we just need to modify the return program counter in this variable.
     let mut return_pc = unsafe { _get_pc(stack_ptr) };
 
     // Match on the Interrupt Control and State Register (ICSR)

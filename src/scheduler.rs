@@ -1,9 +1,9 @@
 use core::{
-    mem::{self, size_of, MaybeUninit},
+    mem::{self, MaybeUninit},
     ptr::{self, null_mut},
 };
 
-use crate::{allocator::memory::zalloc_block, process::Process, trap::FIRST_CTX_SWITCH};
+use crate::{process::Process, trap::FIRST_CTX_SWITCH};
 
 #[repr(C)]
 pub struct ScheduleList {

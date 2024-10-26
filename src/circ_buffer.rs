@@ -1,5 +1,3 @@
-use cortex_m_semihosting::hprintln;
-
 use crate::peripherals::exti;
 
 const CAP: usize = 30;
