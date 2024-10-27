@@ -7,7 +7,7 @@
         {
             "name": "Cortex Debug",
             "cwd": "${workspaceFolder}",
-            "executable": "./target/thumbv6m-none-eabi/debug/booting",
+            "executable": "./target/thumbv6m-none-eabi/debug/stm32-os",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",
