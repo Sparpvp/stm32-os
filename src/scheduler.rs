@@ -8,6 +8,10 @@ use crate::{
     trap::FIRST_CTX_SWITCH,
 };
 
+extern "C" {
+    fn _switch_to_psp(psp: *mut u8);
+}
+
 #[repr(C)]
 pub struct ScheduleList {
     pub proc: MaybeUninit<Process>,
@@ -21,6 +25,17 @@ pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
 pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
 
 impl Scheduler {
+    // Inlining is mandatory here since the stack changes
+    //  and the epilogue would break everything
+    #[inline(always)]
+    pub fn init(psp: *mut u8) {
+        unsafe {
+            // Set PSP as default stack, flush the pipeline
+            //  standard procedure. Using barriers.
+            _switch_to_psp(psp);
+        }
+    }
+
     #[no_mangle]
     pub unsafe fn next_proc() {
         let curr_proc = CURR_PROC.assume_init_mut();

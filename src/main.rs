@@ -23,6 +23,7 @@ use peripherals::{
     Config, Peripherals,
 };
 use process::Process;
+use scheduler::Scheduler;
 use shell::shell;
 use tasks::*;
 
@@ -71,9 +72,9 @@ extern "C" fn kmain() -> ! {
     IPR::set_priority(IT_PENDSV, 43); // We don't want USART to preempt PendSV
     let _p = Peripherals::init(rcc, config);
 
-    Process::spawner().new(beef).new_kernel(shell);
-
-    SysTick::enable();
+    // Spawn function takes care of all the final initialization.
+    // It includes SysTick interrupts and Scheduler init (psp switch).
+    Process::spawner().new(beef).new(shell).spawn();
 
     loop {
         unsafe {

@@ -35,6 +35,10 @@ impl FreeList {
 fn assert_4_alignment(block: *mut u8) {
     assert_eq!(block as usize % 4 == 0, true);
 }
+#[inline]
+fn assert_8_alignment(block: *mut u8) {
+    assert_eq!(block as usize % 8 == 0, true);
+}
 
 unsafe fn init_metadata(heap: *mut FreeList, size: u16, is_allocated: bool) {
     assert_4_alignment(heap as *mut u8);
@@ -81,6 +85,24 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
     tmp_head
 }
 
+fn first_free_block(heap: *mut FreeList) -> *mut FreeList {
+    unsafe {
+        let mut tmp_head = heap;
+        let heap_end = get_heap_end();
+
+        while (tmp_head as usize) < heap_end && ((*tmp_head).size & 1) == 1 {
+            tmp_head =
+                tmp_head.byte_add((((*tmp_head).size & (!1)) as usize) + size_of::<FreeList>());
+        }
+
+        if (tmp_head as usize) >= heap_end {
+            return 0 as *mut FreeList; // Out of memory
+        }
+
+        return tmp_head;
+    }
+}
+
 pub fn free(ptr: *mut u8) {
     assert_4_alignment(ptr);
 
@@ -91,6 +113,29 @@ pub fn free(ptr: *mut u8) {
     };
 
     // TODO: coalesce blocks
+}
+
+pub fn zalloc_stack(size: u16) -> *mut u8 {
+    let size = (size + 7) & (!7); // Alignes to 8 bytes
+    unsafe {
+        match FREE_LIST {
+            FreeListWrapper(heap) if heap == 0 as *mut FreeList => {
+                return 0 as *mut u8;
+            }
+            FreeListWrapper(heap) => {
+                let last_block = first_free_block(heap);
+                if last_block as usize % 8 == 4 {
+                    // Quick & dirty trick to align to 8 bytes.
+                    // Actually occupies 12 bytes since the header is 8 bytes
+                    zalloc_block(4);
+                }
+
+                let ret_stack = zalloc_block(size);
+                assert_8_alignment(ret_stack);
+                ret_stack
+            }
+        }
+    }
 }
 
 pub fn zalloc_block(size: u16) -> *mut u8 {

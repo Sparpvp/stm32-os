@@ -4,11 +4,13 @@ use core::{
 };
 
 use crate::{
-    allocator::memory::{free, zalloc_block},
+    allocator::memory::{free, zalloc_block, zalloc_stack},
+    peripherals::core::SysTick,
     scheduler::{ScheduleList, Scheduler, CURR_PROC, PROC_LIST},
 };
 
 const STACK_SIZE: u16 = 328;
+const IDLE_BUFFER: u16 = 128;
 static mut NEW_PID: u16 = 1;
 
 #[repr(C)]
@@ -37,7 +39,9 @@ pub struct Process {
     pub state: ProcessState,
     pub pid: u16,
 }
-pub struct ProcessSpawner;
+pub struct ProcessSpawner {
+    idle_task_stack: *mut u8,
+}
 
 impl Context {
     fn new_default(func_addr: usize, stack_base: *mut u8) -> Context {
@@ -53,19 +57,6 @@ impl Context {
             pc: func_addr,
         }
     }
-
-    fn new_kernel(func_addr: usize) -> Context {
-        let xpsr: usize = 1 << 24;
-        let freg: [usize; 3] = [xpsr, 0, 0]; // Use MAIN Stack Pointer (MSP)
-
-        Context {
-            general_regs: [0; 8],
-            flags_regs: freg,
-            curr_sp: 0, // Since there will only be the shell as a kernel proc, we just use the last MSP value.
-            lr: 0xFFFFFFFF, // Reset value
-            pc: func_addr,
-        }
-    }
 }
 
 impl ProcessSpawner {
@@ -74,27 +65,32 @@ impl ProcessSpawner {
         self
     }
 
-    pub fn new_kernel(self, func: fn()) {
-        Process::new_kernel_proc(func).enqueue();
-
+    // Also here the inline is mandatory
+    #[inline(always)]
+    pub fn spawn(self) {
         unsafe {
             // Initialize the current process with the first one
             // when we're terminating the builder
             CURR_PROC.write(ptr::read(PROC_LIST.0));
         }
+
+        Scheduler::init(self.idle_task_stack);
+        SysTick::enable();
     }
 }
 
 impl Process {
     pub fn spawner() -> ProcessSpawner {
-        ProcessSpawner
+        ProcessSpawner {
+            idle_task_stack: unsafe { zalloc_stack(IDLE_BUFFER).byte_add(IDLE_BUFFER as usize) },
+        }
     }
 
     pub fn new(func: fn()) -> Self {
         let func_addr = func as usize;
         // Since the stack is descending-order, and the allocator gives us the
         // starting address on RAM, we add its size to reference the top
-        let stack_base = unsafe { zalloc_block(STACK_SIZE).byte_add(STACK_SIZE as usize) };
+        let stack_base = unsafe { zalloc_stack(STACK_SIZE).byte_add(STACK_SIZE as usize) };
 
         let proc = Process {
             ctx: Context::new_default(func_addr, stack_base),
@@ -105,26 +101,6 @@ impl Process {
 
         unsafe {
             // Cortex M0 is single CPU, we don't have to deal with atomics.
-            NEW_PID += 1;
-        };
-
-        proc
-    }
-
-    pub fn new_kernel_proc(func: fn()) -> Self {
-        // We will call this function only once
-        // to spawn the shell
-
-        let func_addr = func as usize;
-
-        let proc = Process {
-            ctx: Context::new_kernel(func_addr),
-            stack_base: null_mut(),
-            state: ProcessState::Ready,
-            pid: unsafe { NEW_PID },
-        };
-
-        unsafe {
             NEW_PID += 1;
         };
 
