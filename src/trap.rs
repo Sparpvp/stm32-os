@@ -21,19 +21,6 @@ extern "C" {
     fn _get_pc(stack_ptr: *const u32) -> u32;
 }
 
-#[inline(always)]
-unsafe fn get_stack_alignment() -> usize {
-    let curr_stack_ptr: usize;
-
-    asm!("
-        MOV {0}, sp
-    ", out(reg) curr_stack_ptr
-    );
-
-    let remainder = curr_stack_ptr as usize % 8;
-    remainder
-}
-
 fn pend_sv_set() {
     // Bit 28: PENDSVSET
     let icsr = unsafe { &mut *(ICSR_ADDR as *mut RW<u32>) };
@@ -52,7 +39,8 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
             so, NOT: https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/handling-an-exception
             and NOT: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
-    assert_eq!(unsafe { get_stack_alignment() == 0 }, true);
+
+    assert_eq!(stack_ptr as usize % 8 == 0, true);
 
     // Save the callee-saved registers onto the stack
     // According to the arm calling convention, those are r4-r7

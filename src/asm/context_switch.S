@@ -9,7 +9,12 @@
 _context_switch:
     CPSID i
 
+    // Since PendSV is low priority, it cannot preempt any handler.
+    // Therefore we don't need to worry about
+    //  context-switching from a handler preemption.
     PUSH {r0}
+    // Check if we're doing the first context switch. In that
+    //  case, just jump to the first available process.
     LDR r0, =FIRST_CTX_SWITCH
     LDRB r0, [r0]
     CMP r0, #1
@@ -36,35 +41,26 @@ _context_switch:
     STR r7, [r0]
     ADD r0, r0, #4
 
-    // Check whether we were using MSP or PSP and save it
-    MOV r1, lr
-    MOV r2, #0b100
-    TST r1, r2
-    BNE str_psp
-    B str_msp
-str_psp:
-    MRS r1, psp
-    STR r1, [r0]
-    ADD r0, r0, #4
-str_msp:
-    MRS r1, msp
-    STR r1, [r0]
+    // We can 'freely' use the registers now as they've been saved.
+    // Save the stack pointer into the process/thread control block.
+    //  We're sure we were using PSP here.
+    MRS r2, psp
+    STR r2, [r0]
     ADD r0, r0, #4
 
     // Load the link register, get it from the interrupt-generated stack frame
     // Note: stacking on PSP (on armv6) happens only if the mode at
-    //  exception entry was mode_thread. So we'll always be using MSP
-    // Note: here we're assuming sp aliases for msp. If not, we'll save msp in a reg.
-    ADD sp, sp, #24 // (= 4(PUSH) + 0x14(LR))
-    LDR r1, [sp]
+    //  exception entry was mode_thread. Again, by now it's certain it has used psp.
+    ADD r2, r2, #24 // (= 4(PUSH) + 0x14(LR)). R2 contains PSP
+    LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4 
     // Load the PC with the same method
-    ADD sp, sp, #4
-    LDR r1, [sp]
+    ADD r2, r2, #4
+    LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4
-    SUB sp, sp, #0x1C // (= 0x18 + 0x4)
+    SUB r2, r2, #0x1C // (= 0x18 + 0x4)
 
     // Load the flags
     MRS r1, APSR
@@ -107,38 +103,43 @@ restore_context:
     LDR r0, =CURR_PROC
 
     // Modify the interruption stack frame with the new process context
-    ADD sp, sp, #4  // Adjust stack pointer to the stacking frame
+    // Adjust stack pointer to the next process frame
+    MOV r1, r0
+    ADD r1, r1, #32
+    LDR r2, [r1]
+    MSR psp, r2
+    
     LDR r1, [r0]    // Get then store r0
-    STR r1, [sp]
-    ADD sp, sp, #4
+    STR r1, [r2]
+    ADD r2, r2, #4
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store r1
-    STR r1, [sp]
-    ADD sp, sp, #4
+    STR r1, [r2]
+    ADD r2, r2, #4
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store r2
-    STR r1, [sp]
-    ADD sp, sp, #4
+    STR r1, [r2]
+    ADD r2, r2, #4
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store r3
-    STR r1, [sp]
-    ADD sp, sp, #8
+    STR r1, [r2]
+    ADD r2, r2, #8
     ADD r0, r0, #24
     LDR r1, [r0]    // Get then store LR
-    STR r1, [sp]
-    ADD sp, sp, #4
+    STR r1, [r2]
+    ADD r2, r2, #4
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store PC
-    STR r1, [sp]
-    ADD sp, sp, #4
+    STR r1, [r2]
+    ADD r2, r2, #4
     ADD r0, r0, #4
     LDR r1, [r0]    // Get then store PSR
-    STR r1, [sp]
-    SUB sp, sp, #4  // Reset the previous 4 bytes added
+    STR r1, [r2]
+    SUB r2, r2, #4  // Reset the previous 4 bytes added
 
     // From now r0-r3 are scratchable
     // Reset stack pointer to the base during the interrupt
-    SUB sp, sp, #0x1C
+    SUB r2, r2, #0x1C
     // Reset r0 after r3 addy
     // I'm too lazy to calculate the offset, we'll just re-load it
     LDR r0, =CURR_PROC
@@ -154,22 +155,6 @@ restore_context:
     LDR r7, [r0]
     ADD r0, r0, #4
 
-    // Modify the current stack pointer
-    // Since we have only one kernel process (that uses msp)
-    //  we can avoid moving the stack pointer if we'll be using msp.
-    ADD r0, r0, #20
-    // If [r0] & 0b10 is 1, we'll be using the psp
-    LDR r1, [r0]
-    SUB r0, r0, #20
-    MSR CONTROL, r1
-    MOV r2, #0b10
-    TST r1, r2
-    BNE return_psp
-    B return
-return_psp:
-    LDR r1, [r0]    // r0 points to curr_sp
-    MSR psp, r1
-return:
     ADD r0, r0, #12
     LDR r1, [r0]
     MSR APSR, r1
@@ -179,4 +164,16 @@ return:
     MOV lr, r3
 
     CPSIE i
+end_ret:
+    BX lr
+
+.global _switch_to_psp
+.thumb
+.thumb_func
+
+_switch_to_psp:
+    MSR psp, r0
+    MOV r1, #2
+    MSR CONTROL, r1
+    ISB
     BX lr
