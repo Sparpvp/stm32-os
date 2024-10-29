@@ -51,7 +51,7 @@ _context_switch:
     // Load the link register, get it from the interrupt-generated stack frame
     // Note: stacking on PSP (on armv6) happens only if the mode at
     //  exception entry was mode_thread. Again, by now it's certain it has used psp.
-    ADD r2, r2, #24 // (= 4(PUSH) + 0x14(LR)). R2 contains PSP
+    ADD r2, r2, #0x14 // (= 0x14(LR)). R2 contains PSP
     LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4 
@@ -60,7 +60,7 @@ _context_switch:
     LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4
-    SUB r2, r2, #0x1C // (= 0x18 + 0x4)
+    SUB r2, r2, #0x14 // (= 0x18 + 0x4)
 
     // Load the flags
     MRS r1, APSR

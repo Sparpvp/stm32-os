@@ -53,7 +53,7 @@ _get_pc:
 .thumb_func
 _setup_frame:
     // r0 -> stack_ptr; ret value
-    PUSH {r3, r4-r7}
+    PUSH {r3}
     bx lr
 
 /* ----------------------------- */

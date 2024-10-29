@@ -17,13 +17,12 @@ pub mod trap;
 use allocator::memory::FreeList;
 use circ_buffer::CircularBuffer;
 use peripherals::{
-    core::{SysTick, IPR, IT_PENDSV},
+    core::{IPR, IT_PENDSV},
     rcc::{Rcc, RccConfig},
     usart::UsartConfig,
     Config, Peripherals,
 };
 use process::Process;
-use scheduler::Scheduler;
 use shell::shell;
 use tasks::*;
 
@@ -74,7 +73,8 @@ extern "C" fn kmain() -> ! {
 
     // Spawn function takes care of all the final initialization.
     // It includes SysTick interrupts and Scheduler init (psp switch).
-    Process::spawner().new(beef).new(shell).spawn();
+    // Process::spawner().new(beef).new(shell).spawn();
+    Process::spawner().new(shell).spawn();
 
     loop {
         unsafe {

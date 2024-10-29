@@ -40,8 +40,6 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
             and NOT: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
 
-    assert_eq!(stack_ptr as usize % 8 == 0, true);
-
     // Save the callee-saved registers onto the stack
     // According to the arm calling convention, those are r4-r7
     stack_ptr = unsafe {
@@ -50,6 +48,8 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         // So I return the stack_ptr that was passed as an argument.
         _setup_frame(stack_ptr)
     };
+
+    assert_eq!(stack_ptr as usize % 8 == 0, true);
 
     // If we want to return at a different location on main,
     //  we just need to modify the return program counter in this variable.
@@ -67,7 +67,6 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
         3 => {
             // Hard Fault
             panic!("Hard Fault exception triggered!\n");
-            // return_pc += 4; // Here for testing purposes
         }
         11 => {
             // SVCall
@@ -106,9 +105,9 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     unsafe {
         asm!(
             "
-            CPSIE i
-            POP {{r3, r4-r7}}
+            POP {{r3}}
             MOV lr, r3
+            CPSIE i
         "
         );
     };

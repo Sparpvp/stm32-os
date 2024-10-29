@@ -19,6 +19,8 @@ pub struct ScheduleList {
 }
 
 pub struct Scheduler(pub *mut ScheduleList);
+#[no_mangle]
+#[used]
 pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
 #[no_mangle]
 #[used]
@@ -44,7 +46,7 @@ impl Scheduler {
         let mut next_proc: ScheduleList;
         if FIRST_CTX_SWITCH || curr_proc.next == null_mut() {
             // Put the head as the new process
-            next_proc = ptr::read(PROC_LIST.0);
+            next_proc = ptr::read(PROC_LIST.0); // current bug: reading wrong stuff?
         } else {
             // Switch to next process since there's one.
             next_proc = ptr::read(curr_proc.next);

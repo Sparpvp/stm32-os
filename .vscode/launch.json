@@ -15,6 +15,10 @@
             "configFiles": ["/usr/local/share/openocd/scripts/interface/stlink.cfg", "/usr/local/share/openocd/scripts/target/stm32f0x.cfg"],
             "device": "stm32f030r8",
             "preLaunchTask": "Cargo Build (debug)",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
         }
     ]
 }
