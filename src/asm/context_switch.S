@@ -99,16 +99,19 @@ restore_context:
     MOV r1, #0
     STRB r1, [r0]
 
-    // Get the new to-be-loaded process address
+    // Get the new to-be-loaded process address, to retrieve the PSP
     LDR r0, =CURR_PROC
 
-    // Modify the interruption stack frame with the new process context
+    // Modify the interruption stack frame (on PSP) with the new process context
     // Adjust stack pointer to the next process frame
     MOV r1, r0
     ADD r1, r1, #32
     LDR r2, [r1]
     MSR psp, r2
-    
+
+    // r2 contains the PSP address where the interruption stack frame starts
+    // r0 contains the current process address
+
     LDR r1, [r0]    // Get then store r0
     STR r1, [r2]
     ADD r2, r2, #4

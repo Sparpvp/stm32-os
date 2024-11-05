@@ -46,7 +46,7 @@ impl Scheduler {
         let mut next_proc: ScheduleList;
         if FIRST_CTX_SWITCH || curr_proc.next == null_mut() {
             // Put the head as the new process
-            next_proc = ptr::read(PROC_LIST.0); // current bug: reading wrong stuff?
+            next_proc = ptr::read(PROC_LIST.0);
         } else {
             // Switch to next process since there's one.
             next_proc = ptr::read(curr_proc.next);

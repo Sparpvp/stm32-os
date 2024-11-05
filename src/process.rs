@@ -9,8 +9,13 @@ use crate::{
     scheduler::{ScheduleList, Scheduler, CURR_PROC, PROC_LIST},
 };
 
+// Process Stack Size
 const STACK_SIZE: u16 = 328;
-const IDLE_BUFFER: u16 = 128;
+// Idle kernel stack to switch from MSP to PSP
+// This value is arbitrary and quite dangerous to mess around.
+// Indeed, future updates of the kernel could require a bigger idle buffer.
+const IDLE_BUFFER: u16 = 256;
+const INTERRUPT_FRAME_SIZE: u16 = 8 * 4;
 static mut NEW_PID: u16 = 1;
 
 #[repr(C)]
@@ -90,7 +95,9 @@ impl Process {
         let func_addr = func as usize;
         // Since the stack is descending-order, and the allocator gives us the
         // starting address on RAM, we add its size to reference the top
-        let stack_base = unsafe { zalloc_stack(STACK_SIZE).byte_add(STACK_SIZE as usize) };
+        let stack_base = unsafe {
+            zalloc_stack(STACK_SIZE).byte_add(STACK_SIZE as usize - INTERRUPT_FRAME_SIZE as usize)
+        };
 
         let proc = Process {
             ctx: Context::new_default(func_addr, stack_base),
@@ -100,7 +107,7 @@ impl Process {
         };
 
         unsafe {
-            // Cortex M0 is single CPU, we don't have to deal with atomics.
+            // Our board with a Cortex M0 is single CPU, we don't have to deal with atomics.
             NEW_PID += 1;
         };
 

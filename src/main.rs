@@ -73,8 +73,8 @@ extern "C" fn kmain() -> ! {
 
     // Spawn function takes care of all the final initialization.
     // It includes SysTick interrupts and Scheduler init (psp switch).
-    // Process::spawner().new(beef).new(shell).spawn();
-    Process::spawner().new(shell).spawn();
+    Process::spawner().new(beef).new(shell).spawn();
+    // Process::spawner().new(shell).spawn();
 
     loop {
         unsafe {
