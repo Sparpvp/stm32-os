@@ -46,7 +46,7 @@ impl Scheduler {
     // As long as at least one .new() was invoked on the spawner, the constraint holds.
     #[no_mangle]
     pub unsafe fn next_proc() {
-        let process_list = PROC_LIST.take().unwrap();
+        let mut process_list = PROC_LIST.take().unwrap();
         let curr_proc = CURR_PROC.assume_init_mut();
         curr_proc.state = ProcessState::Ready;
 
@@ -59,10 +59,14 @@ impl Scheduler {
             // Put the head as the new process to be scheduled
             let head = (&(*process_list.head).proc).assume_init_ref();
             next_proc = ptr::read(head);
+
+            process_list.current = process_list.head;
         } else {
             // Switch to the next process since there's one.
             let next = (&(*(*process_list.current).next).proc).assume_init_ref();
             next_proc = ptr::read(next);
+
+            process_list.current = (*process_list.current).next;
         }
 
         next_proc.state = ProcessState::Running;
