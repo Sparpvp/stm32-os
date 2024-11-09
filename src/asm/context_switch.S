@@ -60,7 +60,6 @@ _context_switch:
     LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4
-    SUB r2, r2, #0x14 // (= 0x18 + 0x4)
 
     // Load the flags
     MRS r1, APSR

@@ -40,12 +40,11 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
             and NOT: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
 
-    stack_ptr = unsafe {
-        asm!("MOV r3, lr", clobber_abi("aapcs"));
-        // Modifying the current sp, for some reason, modifies the stack_ptr variable too.
-        // So I return the stack_ptr that was passed as an argument.
-        _setup_frame(stack_ptr)
-    };
+    // Save LR at the beginning to return correctly
+    let original_lr: u32;
+    unsafe {
+        asm!("MOV {}, LR", out(reg) original_lr);
+    }
 
     assert_eq!(stack_ptr as usize % 8 == 0, true);
 
@@ -103,10 +102,9 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
     unsafe {
         asm!(
             "
-            POP {{r3}}
-            MOV lr, r3
-            CPSIE i
-        "
+            MOV LR, {0}
+        ",
+            in(reg) original_lr,
         );
     };
 }
