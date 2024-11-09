@@ -10,11 +10,11 @@ use crate::{
 };
 
 // Process Stack Size
-const STACK_SIZE: u16 = 328;
+const STACK_SIZE: u16 = 1024;
 // Idle kernel stack to switch from MSP to PSP
 // This value is arbitrary and quite dangerous to mess around.
 // Indeed, future updates of the kernel could require a bigger idle buffer.
-const IDLE_BUFFER: u16 = 256;
+const IDLE_BUFFER: u16 = 1024;
 const INTERRUPT_FRAME_SIZE: u16 = 8 * 4;
 static mut NEW_PID: u16 = 1;
 
@@ -77,9 +77,7 @@ impl ProcessSpawner {
             // Initialize the current process with the first one
             //  when we're terminating the builder
             let proc_list = PROC_LIST.as_ref().unwrap();
-            let head = (*proc_list.head).proc.assume_init_ref();
-
-            CURR_PROC.write(ptr::read(head));
+            CURR_PROC.write(ptr::read(proc_list.head));
         }
 
         Scheduler::init(self.idle_task_stack);
@@ -147,7 +145,7 @@ impl Process {
 impl Drop for Process {
     fn drop(&mut self) {
         let bottom_stack: usize =
-            self.stack_base as usize - (STACK_SIZE + INTERRUPT_FRAME_SIZE) as usize;
+            self.stack_base as usize - STACK_SIZE as usize + INTERRUPT_FRAME_SIZE as usize;
         free(bottom_stack as *mut u8);
     }
 }
