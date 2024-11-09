@@ -75,8 +75,11 @@ impl ProcessSpawner {
     pub fn spawn(self) {
         unsafe {
             // Initialize the current process with the first one
-            // when we're terminating the builder
-            CURR_PROC.write(ptr::read(PROC_LIST.0));
+            //  when we're terminating the builder
+            let proc_list = PROC_LIST.as_ref().unwrap();
+            let head = (*proc_list.head).proc.assume_init_ref();
+
+            CURR_PROC.write(ptr::read(head));
         }
 
         Scheduler::init(self.idle_task_stack);
@@ -120,17 +123,24 @@ impl Process {
         new_schedule.proc.write(self);
         new_schedule.next = null_mut();
 
-        if unsafe { PROC_LIST.0 } == null_mut() {
-            unsafe {
-                PROC_LIST = Scheduler(new_schedule);
+        match unsafe { PROC_LIST.as_mut() } {
+            Some(p) => {
+                let mut head = unsafe { &mut (*p.head) };
+                while head.next != null_mut() {
+                    head = unsafe { &mut *(head.next) };
+                }
+                head.next = new_schedule;
             }
-        } else {
-            let mut head = unsafe { &mut *(PROC_LIST.0) };
-            while head.next != null_mut() {
-                head = unsafe { &mut *(head.next) };
+            None => {
+                let s = Scheduler {
+                    head: new_schedule,
+                    current: new_schedule,
+                };
+                unsafe {
+                    PROC_LIST.replace(s);
+                };
             }
-            head.next = new_schedule;
-        }
+        };
     }
 }
 
