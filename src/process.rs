@@ -146,7 +146,8 @@ impl Process {
 
 impl Drop for Process {
     fn drop(&mut self) {
-        let bottom_stack: usize = self.stack_base as usize - STACK_SIZE as usize;
+        let bottom_stack: usize =
+            self.stack_base as usize - (STACK_SIZE + INTERRUPT_FRAME_SIZE) as usize;
         free(bottom_stack as *mut u8);
     }
 }

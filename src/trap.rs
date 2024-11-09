@@ -40,8 +40,6 @@ extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
             and NOT: https://developer.arm.com/documentation/dui0203/h/handling-processor-exceptions/interrupt-handlers/simple-interrupt-handlers-in-c?lang=en
     */
 
-    // Save the callee-saved registers onto the stack
-    // According to the arm calling convention, those are r4-r7
     stack_ptr = unsafe {
         asm!("MOV r3, lr", clobber_abi("aapcs"));
         // Modifying the current sp, for some reason, modifies the stack_ptr variable too.

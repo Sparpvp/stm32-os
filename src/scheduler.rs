@@ -51,8 +51,10 @@ impl Scheduler {
         curr_proc.state = ProcessState::Ready;
 
         // Save the current PCB into the list
-        let curr_instance = (&mut (*process_list.current).proc).assume_init_mut();
-        ptr::replace(curr_instance, ptr::read(curr_proc));
+        // Not dropping the previous process inside the MaybeUninit not only is not an issue, it is mandatory.
+        // That's because the process that's being overwritten is the same and effectively uses
+        //  the same heap-allocated block.
+        (*process_list.current).proc.write(ptr::read(curr_proc));
 
         let mut next_proc: Process;
         if FIRST_CTX_SWITCH || (*process_list.current).next == null_mut() {
@@ -70,7 +72,7 @@ impl Scheduler {
         }
 
         next_proc.state = ProcessState::Running;
-        *curr_proc = next_proc;
+        CURR_PROC.write(next_proc);
 
         PROC_LIST.replace(process_list);
     }
