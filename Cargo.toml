@@ -6,7 +6,6 @@ name = "stm32-os"
 version = "0.1.0"
 
 [dependencies]
-cortex-m-semihosting = "0.3.3"
 volatile-register = "0.2.2"
 
 [build-dependencies]
