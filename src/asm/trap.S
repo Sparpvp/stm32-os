@@ -13,6 +13,7 @@
 
 _trap_wrapper:
     CPSID i     // mask everything! We don't want to be interrupted.
+    push {r0, r1, r2, r3, lr}
     mrs r0, msp
     mov r1, lr
     mov r2, #0b100
@@ -24,7 +25,9 @@ psp_jmp:
 call_handler:
     // r0-r3 registers are saved by the cpu on exception entry
     ldr r1, =rust_trap_handler
-    bx r1       // r0 is used as the first parameter to be passed to the function
+    BLX r1       // r0 is used as the first parameter to be passed to the function
+    CPSIE i
+    pop {r0, r1, r2, r3, pc}
 
 /* --------------------------- */
 /*        Helper Funcs         */

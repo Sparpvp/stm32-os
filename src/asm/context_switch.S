@@ -60,19 +60,16 @@ _context_switch:
     LDR r1, [r2]
     STR r1, [r0]
     ADD r0, r0, #4
-    SUB r2, r2, #0x14 // (= 0x18 + 0x4)
 
     // Load the flags
-    MRS r1, APSR
-    STR r1, [r0]
+    // Get PSR from interruption stack frame
+    ADD r2, r2, #4
+    LDR r1, [r2] // Get xPSR
+    STR r1, [r0] // Store xPSR
     ADD r0, r0, #4
-    // PRIMASK has been overwritten by CPSID i. 
-    // We set that flag manually to 0.
-    MOV r1, #0
-    STR r1, [r0]
-    ADD r0, r0, #4
-    MRS r1, CONTROL
-    STR r1, [r0]
+    // If we got here PRIMASK must have been zero. 
+    //  hence it's superflous to overwrite with 0
+    // Same for CONTROL which is always 2
     ADD r0, r0, #4
 
     // Set process to ready status
@@ -158,9 +155,9 @@ restore_context:
     LDR r7, [r0]
     ADD r0, r0, #4
 
-    ADD r0, r0, #12
-    LDR r1, [r0]
-    MSR APSR, r1
+    // ADD r0, r0, #12
+    // LDR r1, [r0]
+    // MSR APSR, r1
 
     // Restore the previously-saved link register
     POP {r3}

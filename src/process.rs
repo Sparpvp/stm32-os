@@ -10,7 +10,7 @@ use crate::{
 };
 
 // Process Stack Size
-const STACK_SIZE: u16 = 328;
+const STACK_SIZE: u16 = 512;
 // Idle kernel stack to switch from MSP to PSP
 // This value is arbitrary and quite dangerous to mess around.
 // Indeed, future updates of the kernel could require a bigger idle buffer.
@@ -75,8 +75,9 @@ impl ProcessSpawner {
     pub fn spawn(self) {
         unsafe {
             // Initialize the current process with the first one
-            // when we're terminating the builder
-            CURR_PROC.write(ptr::read(PROC_LIST.0));
+            //  when we're terminating the builder
+            let proc_list = PROC_LIST.as_ref().unwrap();
+            CURR_PROC.write(ptr::read(proc_list.head));
         }
 
         Scheduler::init(self.idle_task_stack);
@@ -120,23 +121,31 @@ impl Process {
         new_schedule.proc.write(self);
         new_schedule.next = null_mut();
 
-        if unsafe { PROC_LIST.0 } == null_mut() {
-            unsafe {
-                PROC_LIST = Scheduler(new_schedule);
+        match unsafe { PROC_LIST.as_mut() } {
+            Some(p) => {
+                let mut head = unsafe { &mut (*p.head) };
+                while head.next != null_mut() {
+                    head = unsafe { &mut *(head.next) };
+                }
+                head.next = new_schedule;
             }
-        } else {
-            let mut head = unsafe { &mut *(PROC_LIST.0) };
-            while head.next != null_mut() {
-                head = unsafe { &mut *(head.next) };
+            None => {
+                let s = Scheduler {
+                    head: new_schedule,
+                    current: new_schedule,
+                };
+                unsafe {
+                    PROC_LIST.replace(s);
+                };
             }
-            head.next = new_schedule;
-        }
+        };
     }
 }
 
 impl Drop for Process {
     fn drop(&mut self) {
-        let bottom_stack: usize = self.stack_base as usize - STACK_SIZE as usize;
+        let bottom_stack: usize =
+            self.stack_base as usize - STACK_SIZE as usize + INTERRUPT_FRAME_SIZE as usize;
         free(bottom_stack as *mut u8);
     }
 }

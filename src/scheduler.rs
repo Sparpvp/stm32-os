@@ -18,10 +18,14 @@ pub struct ScheduleList {
     pub next: *mut ScheduleList,
 }
 
-pub struct Scheduler(pub *mut ScheduleList);
+pub struct Scheduler {
+    pub head: *mut ScheduleList,    // Head might be repositioned
+    pub current: *mut ScheduleList, // Current will be modified at each context switch
+}
+
 #[no_mangle]
 #[used]
-pub static mut PROC_LIST: Scheduler = Scheduler(0 as *mut ScheduleList);
+pub static mut PROC_LIST: Option<Scheduler> = None;
 #[no_mangle]
 #[used]
 pub static mut CURR_PROC: MaybeUninit<ScheduleList> = MaybeUninit::uninit();
@@ -38,21 +42,40 @@ impl Scheduler {
         }
     }
 
+    // Safety: Assumes PROC_LIST and CURR_LIST are initialized.
+    // As long as at least one .new() was invoked on the spawner, the constraint holds.
     #[no_mangle]
     pub unsafe fn next_proc() {
+        let mut process_list = PROC_LIST.take().unwrap();
         let curr_proc = CURR_PROC.assume_init_mut();
         curr_proc.proc.assume_init_mut().state = ProcessState::Ready;
 
+        // Save the current PCB into the list
+        // Not dropping the previous process inside the MaybeUninit not only is not an issue, it is mandatory.
+        // That's because the process that's being overwritten is the same and effectively uses
+        //  the same heap-allocated block.
+        (*process_list.current)
+            .proc
+            .write(ptr::read(curr_proc.proc.assume_init_ref()));
+
         let mut next_proc: ScheduleList;
-        if FIRST_CTX_SWITCH || curr_proc.next == null_mut() {
-            // Put the head as the new process
-            next_proc = ptr::read(PROC_LIST.0);
+        if FIRST_CTX_SWITCH || (*process_list.current).next == null_mut() {
+            // Put the head as the new process to be scheduled
+            let head = ptr::read(process_list.head);
+            next_proc = head;
+
+            process_list.current = process_list.head;
         } else {
-            // Switch to next process since there's one.
-            next_proc = ptr::read(curr_proc.next);
+            // Switch to the next process since there's one.
+            let next = (*process_list.current).next;
+            next_proc = ptr::read(next);
+
+            process_list.current = (*process_list.current).next;
         }
 
         next_proc.proc.assume_init_mut().state = ProcessState::Running;
         let _ = mem::replace(curr_proc, next_proc);
+
+        PROC_LIST.replace(process_list);
     }
 }
