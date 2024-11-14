@@ -42,50 +42,6 @@ impl Scheduler {
         }
     }
 
-    // // WORKING 1
-
-    // #[no_mangle]
-    // pub unsafe fn next_proc() {
-    //     let curr_proc = CURR_PROC.assume_init_mut();
-    //     curr_proc.proc.assume_init_mut().state = ProcessState::Ready;
-
-    //     let mut next_proc: ScheduleList;
-    //     if FIRST_CTX_SWITCH || curr_proc.next == null_mut() {
-    //         // Put the head as the new process
-    //         next_proc = ptr::read(PROC_LIST.as_ref().unwrap().head);
-    //     } else {
-    //         // Switch to next process since there's one.
-    //         next_proc = ptr::read(curr_proc.next);
-    //     }
-
-    //     next_proc.proc.assume_init_mut().state = ProcessState::Running;
-    //     let _ = mem::replace(curr_proc, next_proc);
-    // }
-
-    // WORKING 2
-
-    // #[no_mangle]
-    // pub unsafe fn next_proc() {
-    //     let process_list = PROC_LIST.as_mut().unwrap();
-    //     let curr_proc = CURR_PROC.assume_init_mut();
-    //     curr_proc.proc.assume_init_mut().state = ProcessState::Ready;
-
-    //     let mut next_proc: ScheduleList;
-    //     if FIRST_CTX_SWITCH || (*process_list.current).next == null_mut() {
-    //         // Put the head as the new process to be scheduled
-    //         let head = ptr::read(process_list.head);
-    //         next_proc = head;
-    //     } else {
-    //         // Switch to the next process since there's one.
-    //         let next = (*process_list.current).next;
-    //         next_proc = ptr::read(next);
-    //     }
-
-    //     next_proc.proc.assume_init_mut().state = ProcessState::Running;
-
-    //     let _ = mem::replace(curr_proc, next_proc);
-    // }
-
     // Safety: Assumes PROC_LIST and CURR_LIST are initialized.
     // As long as at least one .new() was invoked on the spawner, the constraint holds.
     #[no_mangle]

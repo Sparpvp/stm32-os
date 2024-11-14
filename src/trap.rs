@@ -30,7 +30,7 @@ fn pend_sv_set() {
 }
 
 #[no_mangle]
-extern "C" fn rust_trap_handler(mut stack_ptr: *const u32) {
+extern "C" fn rust_trap_handler(stack_ptr: *const u32) {
     /*
         The return procedure for ARMv6-M is different from almost all the other architectures.
         Hence, I have to refer to THESE docs:
