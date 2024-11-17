@@ -1,3 +1,4 @@
+pub mod critical_section;
 pub mod irq_handlers;
 
 use core::{

@@ -1,6 +1,6 @@
 use crate::peripherals::exti;
 
-const CAP: usize = 30;
+const CAP: usize = 20;
 
 pub struct CircularBuffer {
     buf: [u8; CAP],
