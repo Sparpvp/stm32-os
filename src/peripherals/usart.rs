@@ -1,8 +1,6 @@
+use core::fmt::Write;
 use core::str;
-
 use volatile_register::RW;
-
-use super::rcc::RCC;
 
 const USART2_ADDR: usize = 0x4000_4400;
 
@@ -48,7 +46,7 @@ impl<'a> Usart<'a> {
         Usart { rb: g }
     }
 
-    pub fn write(&self, data: u8, _rcc: &RCC) {
+    pub fn write(&self, data: u8) {
         // Configure USART as transmitter
         unsafe {
             // Wait for TXE (clear to send)
@@ -62,7 +60,7 @@ impl<'a> Usart<'a> {
         }
     }
 
-    pub fn write_string(&self, s: &str, _rcc: &RCC) {
+    pub fn write_string(&self, s: &str) {
         unsafe {
             s.as_bytes().into_iter().for_each(|w| {
                 while (self.rb.isr.read() & (1 << 7)) == 0 {}
@@ -73,9 +71,17 @@ impl<'a> Usart<'a> {
         }
     }
 
-    pub fn read_polling(&self, _rcc: &RCC) {
+    pub fn read_polling(&self) {
         while (self.rb.isr.read() & (1 << 5)) == 0 {}
         let r = (self.rb.rdr.read() & 0xFF) as u8;
         // TODO use yet-to-define print macro and print r
+    }
+}
+
+impl<'a> Write for Usart<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.write_string(s);
+
+        Ok(())
     }
 }
