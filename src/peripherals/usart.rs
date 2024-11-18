@@ -18,7 +18,7 @@ pub struct RegisterBlock {
     rtor: RW<u32>,
     rqr: RW<u32>,
     isr: RW<u32>,
-    icr: RW<u32>,
+    pub icr: RW<u32>,
     pub rdr: RW<u32>,
     tdr: RW<u32>,
 }

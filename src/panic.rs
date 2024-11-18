@@ -1,7 +1,5 @@
 use core::arch::asm;
 
-use alloc::string::String;
-
 #[macro_export]
 macro_rules! print {
     ($($args:tt)+) => {{
@@ -10,7 +8,7 @@ macro_rules! print {
         unsafe {
             let usart = usart::G_USART.as_mut();
             if usart.is_none() {
-                abort();
+                crate::panic::abort();
             }
             let usart = usart.unwrap();
             let _ = write!(usart, $($args)+);
@@ -59,7 +57,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 #[no_mangle]
-extern "C" fn abort() -> ! {
+pub extern "C" fn abort() -> ! {
     loop {
         unsafe { asm!("wfi") }
     }
