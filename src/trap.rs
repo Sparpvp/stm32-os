@@ -6,7 +6,7 @@ use core::{
     ptr::{read_volatile, write_volatile},
 };
 
-use irq_handlers::usart2_irq_receive;
+use irq_handlers::{usart2_irq_receive, usart2_transmission_complete};
 use volatile_register::RW;
 
 const ICSR_ADDR: u32 = 0xE000ED04;
@@ -79,6 +79,7 @@ extern "C" fn rust_trap_handler(stack_ptr: *const u32) {
             // USART2 - The formula is IRQ(n-1) = n+15
             // -> Hence IRQ28 is USART2, so IRQ(28) = IRQ(29-1) = 29+15 = 44
             usart2_irq_receive();
+            usart2_transmission_complete();
         }
         _ => {
             panic!("Unhandled exception number: {}.\n", exception_number);
