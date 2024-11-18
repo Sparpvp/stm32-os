@@ -107,9 +107,11 @@ pub fn free(ptr: *mut u8) {
     assert_4_alignment(ptr);
 
     let block = unsafe { ptr.byte_sub(size_of::<FreeList>()) } as *mut FreeList;
+    // & (!1) since we want to discard last bit
+    let old_size: u16 = unsafe { (*block).size } & (!1);
     unsafe {
-        zero_memory((*block).memory, (*block).size);
-        init_metadata(block, (*block).size, false);
+        zero_memory((*block).memory, old_size);
+        init_metadata(block, old_size, false);
     };
 
     // TODO: coalesce blocks
@@ -151,7 +153,7 @@ pub fn zalloc_block(size: u16) -> *mut u8 {
                 // hprintln!("Allocating size {}...", size).unwrap();
                 let newblock_ptr = alloc_first_fit(heap, size);
                 if newblock_ptr == 0 as *mut FreeList {
-                    return 0 as *mut u8;
+                    panic!("Out of memory!");
                 }
                 (*newblock_ptr).memory = (newblock_ptr.byte_add(size_of::<FreeList>())) as *mut u8;
 

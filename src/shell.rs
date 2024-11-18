@@ -3,10 +3,11 @@ use alloc::vec::Vec;
 use crate::println;
 use crate::{circ_buffer::CircularBuffer, trap::critical_section::critical_section};
 
-pub fn shell() {
-    // TODO: Get from circular buffer till enter is received
-    // Then process commands
+fn process_command(cmd: Vec<char>) {
+    todo!()
+}
 
+pub fn shell() {
     // critical_section(|_c| {
     //     let mut curr_command: Vec<char> = Vec::new();
     //     curr_command.push('a');
@@ -21,26 +22,23 @@ pub fn shell() {
     //     b.into_iter().for_each(|i| println!("Test {}", i));
     // });
 
-    // let mut curr_command: Vec<char> = Vec::with_capacity(100);
-    // TODO: scary bug: free called by the global allocator seems to be misaligning something
-    let mut curr_command: Vec<char> = Vec::with_capacity(5);
-
     loop {
-        match critical_section(CircularBuffer::get) {
-            Ok(cb) if cb as char != ' ' => {
-                // TODO handle character
-                critical_section(|_c| {
+        let mut curr_command: Vec<char> = Vec::new();
+
+        loop {
+            match critical_section(CircularBuffer::get) {
+                Ok(cb) if cb as char != ' ' => critical_section(|_c| {
                     curr_command.push(cb as char);
-                    println!("TEST {}", cb as char);
-                })
-            }
-            Ok(cb) if cb as char == ' ' => break,
-            Ok(_) => unreachable!(),
-            Err(_) => {
-                // TODO yield syscall
+                    println!("read: {}", cb as char);
+                }),
+                Ok(cb) if cb as char == ' ' => break,
+                Ok(_) => unreachable!(),
+                Err(_) => {
+                    // TODO yield syscall
+                }
             }
         }
-    }
 
-    loop {}
+        process_command(curr_command);
+    }
 }
