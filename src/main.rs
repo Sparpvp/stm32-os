@@ -3,10 +3,11 @@
 
 extern crate alloc;
 use core::arch::asm;
+#[macro_use]
+pub mod panic;
 
 pub mod allocator;
 pub mod circ_buffer;
-pub mod panic;
 pub mod peripherals;
 pub mod process;
 pub mod scheduler;

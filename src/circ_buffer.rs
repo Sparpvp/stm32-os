@@ -49,7 +49,7 @@ impl CircularBuffer {
         let mut cb = unsafe { G_BUFFER.take().unwrap() };
         let res = match cb.read_index != cb.write_index {
             true => {
-                if cb.read_index == (cb.write_index - 1) % CAP {
+                if cb.read_index + 1 == cb.write_index % CAP {
                     exti::EXTI::unmask_usart2();
                 }
 
