@@ -9,9 +9,9 @@ impl CriticalSection {
 
 // Execute function func in an environment with PRIMASK enabled
 // The function func cannot be interrupted.
-pub fn critical_section<F, T>(mut func: F) -> T
+pub fn critical_section<F, T>(func: F) -> T
 where
-    F: FnMut(&CriticalSection) -> T,
+    F: FnOnce(&CriticalSection) -> T,
 {
     let primask_status: u8;
     unsafe {

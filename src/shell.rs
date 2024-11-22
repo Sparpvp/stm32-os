@@ -2,19 +2,20 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use crate::println;
+use crate::trap::critical_section::CriticalSection;
 use crate::{circ_buffer::CircularBuffer, trap::critical_section::critical_section};
 
 // Consider using dynamic-dispatched errors. A bit heavy for our potato uC.
 struct ParserError;
 
-fn rm_proc_by_pid(pid: u16) -> Result<(), ParserError> {
+fn rm_proc_by_pid(pid: u16, _cs: &CriticalSection) -> Result<(), ParserError> {
     Ok(())
 }
-fn rm_proc_by_name(name: String) -> Result<(), ParserError> {
+fn rm_proc_by_name(name: String, _cs: &CriticalSection) -> Result<(), ParserError> {
     Ok(())
 }
 
-fn add_proc() -> Result<(), ParserError> {
+fn add_proc(_cs: CriticalSection) -> Result<(), ParserError> {
     Ok(())
 }
 
@@ -34,20 +35,33 @@ fn process_command(cmd: Vec<char>) -> Result<(), ParserError> {
         }
     }
 
-    let ret = match opcode.iter().collect::<String>().as_str() {
+    let opcode_bind = opcode.iter().collect::<String>();
+    let opcode = opcode_bind.as_str();
+
+    let res = match opcode {
         "rmproc" => {
-            todo!();
+            let r = args
+                .iter()
+                .position(|&c| c == ' ')
+                .and_then(|p| {
+                    let args = args.drain(..=p).collect::<String>();
+                    args.parse::<u16>()
+                        .ok()
+                        .and_then(|p| critical_section(|cs| rm_proc_by_pid(p, cs)).ok())
+                        .ok_or_else(|| ParserError)
+                        .or_else(|_e| critical_section(|cs| rm_proc_by_name(args, cs)))
+                        .ok()
+                })
+                .ok_or_else(|| ParserError);
+            r
         }
         "addproc" => {
             todo!();
         }
-        _ => {
-            todo!();
-            Err(ParserError)
-        }
+        _ => Err(ParserError),
     };
 
-    ret
+    res
 }
 
 pub fn shell() {
@@ -56,11 +70,11 @@ pub fn shell() {
 
         loop {
             match critical_section(CircularBuffer::get) {
-                Ok(cb) if cb as char != ' ' => critical_section(|_c| {
+                Ok(cb) if cb as char != '\n' => critical_section(|_c| {
                     curr_command.push(cb as char);
                     println!("read: {}", cb as char);
                 }),
-                Ok(cb) if cb as char == ' ' => break,
+                Ok(cb) if cb as char == '\n' => break,
                 Ok(_) => unreachable!(),
                 Err(_) => {
                     // TODO yield syscall

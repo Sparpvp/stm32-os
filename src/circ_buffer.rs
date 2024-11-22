@@ -27,7 +27,7 @@ impl CircularBuffer {
         };
     }
 
-    pub fn put(data: u8, _c: &CriticalSection) {
+    pub fn put(data: u8, _cs: &CriticalSection) {
         assert_eq!(unsafe { G_BUFFER.is_some() }, true);
 
         let mut cb = unsafe { G_BUFFER.take().unwrap() };
@@ -43,7 +43,7 @@ impl CircularBuffer {
         };
     }
 
-    pub fn get(_c: &CriticalSection) -> Result<u8, EmptyBufferError> {
+    pub fn get(_cs: &CriticalSection) -> Result<u8, EmptyBufferError> {
         assert_eq!(unsafe { G_BUFFER.is_some() }, true);
 
         let mut cb = unsafe { G_BUFFER.take().unwrap() };
