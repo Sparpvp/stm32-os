@@ -117,6 +117,40 @@ pub fn free(ptr: *mut u8) {
     // TODO: coalesce blocks
 }
 
+pub fn free_in_range(ptr: *mut u8) {
+    assert_4_alignment(ptr);
+
+    let mut heap_head = unsafe {
+        match FREE_LIST {
+            FreeListWrapper(heap) if heap == 0 as *mut FreeList => {
+                panic!("Uninitialized heap in free_in_range.");
+            }
+            FreeListWrapper(heap) => heap,
+        }
+    };
+
+    let heap_end = get_heap_end();
+
+    unsafe {
+        let mut prec = heap_head;
+
+        while (heap_head as usize) < heap_end
+            && (((*heap_head).size & 1) == 1)
+            && heap_head < ptr as *mut FreeList
+        {
+            prec = heap_head;
+            heap_head =
+                heap_head.byte_add((((*heap_head).size & (!1)) as usize) + size_of::<FreeList>());
+        }
+
+        if heap_head == ptr as *mut FreeList {
+            free(heap_head as *mut u8);
+        } else {
+            free(prec as *mut u8);
+        }
+    };
+}
+
 pub fn zalloc_stack(size: u16) -> *mut u8 {
     let size = (size + 7) & (!7); // Alignes to 8 bytes
     unsafe {

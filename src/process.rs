@@ -4,13 +4,13 @@ use core::{
 };
 
 use crate::{
-    allocator::memory::{free, zalloc_block, zalloc_stack},
+    allocator::memory::{free_in_range, zalloc_block, zalloc_stack},
     peripherals::core::SysTick,
     scheduler::{ScheduleList, Scheduler, CURR_PROC, PROC_LIST},
 };
 
 // Process Stack Size
-const STACK_SIZE: u16 = 2048;
+const STACK_SIZE: u16 = 4096;
 // Idle kernel stack to switch from MSP to PSP
 // This value is arbitrary and quite dangerous to mess around.
 // Indeed, future updates of the kernel could require a bigger idle buffer.
@@ -66,7 +66,12 @@ impl Context {
 
 impl ProcessSpawner {
     pub fn new(self, func: fn()) -> Self {
-        Process::new(func).enqueue();
+        Process::new(func, STACK_SIZE).enqueue();
+        self
+    }
+
+    pub fn new_with_stack(self, func: fn(), stack_size: u16) -> Self {
+        Process::new(func, stack_size).enqueue();
         self
     }
 
@@ -92,12 +97,12 @@ impl Process {
         }
     }
 
-    pub fn new(func: fn()) -> Self {
+    pub fn new(func: fn(), stack_size: u16) -> Self {
         let func_addr = func as usize;
         // Since the stack is descending-order, and the allocator gives us the
         // starting address on RAM, we add its size to reference the top
         let stack_base = unsafe {
-            zalloc_stack(STACK_SIZE).byte_add(STACK_SIZE as usize - INTERRUPT_FRAME_SIZE as usize)
+            zalloc_stack(stack_size).byte_add(stack_size as usize - INTERRUPT_FRAME_SIZE as usize)
         };
 
         let proc = Process {
@@ -146,6 +151,6 @@ impl Drop for Process {
     fn drop(&mut self) {
         let bottom_stack: usize =
             self.stack_base as usize - STACK_SIZE as usize + INTERRUPT_FRAME_SIZE as usize;
-        free(bottom_stack as *mut u8);
+        free_in_range(bottom_stack as *mut u8);
     }
 }
