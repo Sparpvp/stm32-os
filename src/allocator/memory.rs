@@ -70,10 +70,24 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
         return 0 as *mut FreeList; // Out of memory
     }
 
+    let size_in_between: i16 =
+        (*tmp_head).size as i16 - 2 * size_of::<FreeList>() as i16 - size as i16;
+
     if (*tmp_head).size == size {
-        init_metadata(tmp_head, 0, true);
+        init_metadata(tmp_head, size, true);
+    } else if size_in_between < 4 {
+        init_metadata(tmp_head, (*tmp_head).size, true);
     } else if (*tmp_head).size > size {
-        let remaining_size = (*tmp_head).size - size;
+        let mut remaining_size = (*tmp_head).size - size;
+
+        // We have to be careful in initializing the size of the next block
+        //  as if we are in between already allocated blocks we could erroneously overwrite them.
+        if (tmp_head.byte_add((*tmp_head).size as usize + size_of::<FreeList>()) as usize)
+            < heap_end
+        {
+            // We are indeed in between some blocks
+            remaining_size = size_in_between as u16;
+        }
         init_metadata(tmp_head, size, true);
         init_metadata(
             tmp_head.byte_add(size as usize + size_of::<FreeList>()),
