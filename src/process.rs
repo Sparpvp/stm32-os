@@ -10,7 +10,7 @@ use crate::{
 };
 
 // Process Stack Size
-const STACK_SIZE: u16 = 4096;
+const STACK_SIZE: u16 = 512;
 // Idle kernel stack to switch from MSP to PSP
 // This value is arbitrary and quite dangerous to mess around.
 // Indeed, future updates of the kernel could require a bigger idle buffer.

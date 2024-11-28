@@ -26,7 +26,7 @@ fn process_command(cmd: Vec<char>) -> Result<(), ParserError> {
         if e.is_whitespace() && !arg_start {
             arg_start = true;
             continue;
-        } else if !e.is_whitespace() {
+        } else if !e.is_whitespace() && !arg_start {
             opcode.push(e);
         }
         if arg_start {
@@ -41,17 +41,16 @@ fn process_command(cmd: Vec<char>) -> Result<(), ParserError> {
         "rmproc" => {
             let r = args
                 .iter()
-                .position(|&c| c == ' ')
-                .and_then(|p| {
-                    let args = args.drain(..=p).collect::<String>();
-                    args.parse::<u16>()
-                        .ok()
-                        .and_then(|p| critical_section(|cs| rm_proc_by_pid(p, cs)).ok())
-                        .ok_or_else(|| ParserError)
-                        .or_else(|_e| critical_section(|cs| rm_proc_by_name(args, cs)))
-                        .ok()
-                })
-                .ok_or_else(|| ParserError);
+                .collect::<String>()
+                .parse::<u16>()
+                .ok()
+                .and_then(|p| critical_section(|cs| rm_proc_by_pid(p, cs)).ok())
+                .ok_or_else(|| ParserError)
+                .or_else(|_e| {
+                    let to_name = args.iter().collect::<String>();
+                    critical_section(|cs| rm_proc_by_name(to_name, cs))
+                });
+
             r
         }
         "addproc" => {
@@ -74,7 +73,7 @@ pub fn shell() {
                     print!("{}", cb as char)
                 }),
                 Ok(cb) if cb as char == '\r' => {
-                    print!("\n");
+                    print!("\r\n");
                     break;
                 }
                 Ok(_) => unreachable!(),
