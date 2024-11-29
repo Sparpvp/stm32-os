@@ -17,6 +17,7 @@ pub mod trap;
 
 use allocator::memory::FreeList;
 use circ_buffer::CircularBuffer;
+use dispatcher::ProcessIdentifier;
 use peripherals::{
     core::{IPR, IT_PENDSV},
     rcc::{Rcc, RccConfig},
@@ -42,12 +43,18 @@ extern "C" fn kmain() -> ! {
     IPR::set_priority(IT_PENDSV, 43); // We don't want USART to preempt PendSV
     let _p = Peripherals::init(rcc, config);
 
+    // We give each function an alias/name that can be used to retrieve the fn address at runtime.
+    // This must be done before spawning the processes, as it is required as a proof of construction for the spawn.
+    let s = ProcessIdentifier::saver()
+        .add("alias1", beef)
+        .add("alias2", beef);
+
     // Spawn function takes care of all the final initialization.
     // It includes SysTick interrupts and Scheduler init (psp switch).
     Process::spawner()
         .new_with_stack(shell, 4096)
         .new(beef)
-        .spawn();
+        .spawn(s);
 
     loop {
         unsafe {

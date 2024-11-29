@@ -1,5 +1,5 @@
-pub fn beef() {
-    // panic!("Gotto");
+pub mod dispatcher;
 
+pub fn beef() {
     loop {}
 }

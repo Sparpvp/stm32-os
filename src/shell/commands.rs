@@ -1,8 +1,16 @@
-use core::ptr::{self, null_mut};
+use core::{
+    mem::transmute,
+    ptr::{self, null_mut},
+};
 
 use alloc::string::String;
 
-use crate::{scheduler::PROC_LIST, trap::critical_section::CriticalSection};
+use crate::{
+    dispatcher::ProcessIdentifier,
+    process::{Process, STACK_SIZE},
+    scheduler::PROC_LIST,
+    trap::critical_section::CriticalSection,
+};
 
 use super::ShellError;
 
@@ -46,6 +54,15 @@ pub(in crate::shell) fn rm_proc_by_name(
     Ok(())
 }
 
-pub(in crate::shell) fn add_proc(_cs: CriticalSection) -> Result<(), ShellError> {
+pub(in crate::shell) fn add_proc(
+    _cs: CriticalSection,
+    proc_name: &'static str,
+) -> Result<(), ShellError> {
+    let func = ProcessIdentifier::retrieve_base_address(proc_name)
+        .ok_or_else(|| ShellError::ExecutionError)?;
+    let func: fn() = unsafe { transmute(func) };
+
+    Process::new(func, STACK_SIZE).enqueue();
+
     Ok(())
 }

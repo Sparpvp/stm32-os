@@ -5,12 +5,13 @@ use core::{
 
 use crate::{
     allocator::memory::{free_in_range, zalloc_block, zalloc_stack},
+    dispatcher::ProcessSaver,
     peripherals::core::SysTick,
     scheduler::{ScheduleList, Scheduler, CURR_PROC, PROC_LIST},
 };
 
 // Process Stack Size
-const STACK_SIZE: u16 = 512;
+pub const STACK_SIZE: u16 = 512;
 // Idle kernel stack to switch from MSP to PSP
 // This value is arbitrary and quite dangerous to mess around.
 // Indeed, future updates of the kernel could require a bigger idle buffer.
@@ -77,7 +78,7 @@ impl ProcessSpawner {
 
     // Also here the inline is mandatory
     #[inline(always)]
-    pub fn spawn(self) {
+    pub fn spawn(self, _s: ProcessSaver) {
         unsafe {
             // Initialize the current process with the first one
             //  when we're terminating the builder
