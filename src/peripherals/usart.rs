@@ -1,6 +1,10 @@
+use alloc::borrow::ToOwned;
 use core::fmt::Write;
 use core::str;
 use volatile_register::RW;
+
+use super::rcc::{ClockSource, SysClkMultiplier, HSI_DEFAULT_CLK, RCC};
+use super::Config;
 
 const USART2_ADDR: usize = 0x4000_4400;
 
@@ -25,17 +29,31 @@ pub struct RegisterBlock {
 
 pub static mut G_USART: Option<Usart> = None;
 
-pub struct UsartConfig {
-    pub baud_rate: u32,
-}
-
 impl<'a> Usart<'a> {
-    pub(in crate::peripherals) fn new(c: UsartConfig) -> Usart<'a> {
+    pub(in crate::peripherals) fn new(c: Config) -> Usart<'a> {
         let g = unsafe { &mut *(USART2_ADDR as *mut RegisterBlock) };
 
         unsafe {
-            // TODO! I've hardcoded 8mhz as RCC PCLK frequency
-            g.brr.write(8_000_000 / c.baud_rate);
+            if c.rcc_config.source == ClockSource::HSI {
+                g.brr
+                    .write(c.rcc_config.sysclk.0 / c.usart_config.baud_rate);
+            } else if c.rcc_config.source == ClockSource::PLL {
+                let ppre_divisor: u32 = match c.rcc_config.pclk.0 {
+                    0 => 1,
+                    4 => 2,
+                    5 => 4,
+                    6 => 8,
+                    7 => 16,
+                    _ => unreachable!(),
+                };
+
+                g.brr.write(
+                    (HSI_DEFAULT_CLK / 2) * (c.rcc_config.sysclk.0 + 2)
+                        / ppre_divisor
+                        / c.usart_config.baud_rate,
+                );
+            }
+
             // RXNEIE (5): Interrupt on receive, TE (3): Transmitter Enable,
             // RE (2): Receiver Enable, UE (0): USART Enable.
             g.cr1.write((1 << 5) | (1 << 3) | (1 << 2) | (1 << 0));

@@ -1,7 +1,7 @@
 use volatile_register::RW;
 
 const RCC_ADDR: u32 = 0x4002_1000;
-const HSI_DEFAULT_CLK: u32 = 8_000_000;
+pub const HSI_DEFAULT_CLK: u32 = 8_000_000;
 
 pub struct Rcc<'a> {
     _rb: &'a mut RegisterBlock,
@@ -61,9 +61,9 @@ pub enum ClockSource {
     PLL,
 }
 
-pub struct SysClkMultiplier(u32);
+pub struct SysClkMultiplier(pub u32);
 impl SysClkMultiplier {
-    pub const _HSI_DEFAULT: Self = Self(HSI_DEFAULT_CLK);
+    pub const HSI_DEFAULT: Self = Self(HSI_DEFAULT_CLK);
     pub const PLL_MUL2: Self = Self(0b0000);
     pub const PLL_MUL3: Self = Self(0b0001);
     pub const PLL_MUL4: Self = Self(0b0010);
@@ -71,7 +71,7 @@ impl SysClkMultiplier {
     pub const PLL_MUL6: Self = Self(0b0100);
 }
 
-pub struct PPREScaler(u32);
+pub struct PPREScaler(pub u32);
 impl PPREScaler {
     pub const AS_SYSCLK: Self = Self(0b000);
     pub const PPRE_DIV2: Self = Self(0b100);
@@ -81,7 +81,11 @@ impl PPREScaler {
 }
 
 impl<'a> Rcc<'a> {
-    pub fn new(c: RccConfig) -> Rcc<'a> {
+    pub fn new(c: &RccConfig) -> Rcc<'a> {
+        if c.source == ClockSource::HSI && c.sysclk.0 != SysClkMultiplier::HSI_DEFAULT.0 {
+            panic!("HSI source is set but selected clock is not HSI_DEFAULT");
+        }
+
         let rcc = unsafe { &mut *(RCC_ADDR as *mut RegisterBlock) };
 
         unsafe {

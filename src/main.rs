@@ -21,8 +21,7 @@ use dispatcher::ProcessIdentifier;
 use peripherals::{
     core::{IPR, IT_PENDSV},
     rcc::{ClockSource, PPREScaler, Rcc, RccConfig, SysClkMultiplier},
-    usart::UsartConfig,
-    Config, Peripherals,
+    Config, Peripherals, UsartConfig,
 };
 use process::Process;
 use shell::shell;
@@ -30,14 +29,15 @@ use tasks::*;
 
 #[no_mangle]
 extern "C" fn kmain() -> ! {
-    let rcc = Rcc::new(RccConfig {
-        source: ClockSource::PLL,
-        sysclk: SysClkMultiplier::PLL_MUL2,
-        pclk: PPREScaler::AS_SYSCLK,
-    });
     let config = Config {
+        rcc_config: RccConfig {
+            source: ClockSource::PLL,
+            sysclk: SysClkMultiplier::PLL_MUL2,
+            pclk: PPREScaler::AS_SYSCLK,
+        },
         usart_config: UsartConfig { baud_rate: 9600 },
     };
+    let rcc = Rcc::new(&config.rcc_config);
 
     FreeList::init();
     CircularBuffer::init();

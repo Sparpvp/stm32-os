@@ -1,13 +1,13 @@
 use exti::EXTI;
 use gpio::GPIOA;
-use rcc::{Rcc, RCC};
-use usart::{Usart, UsartConfig, G_USART};
+use rcc::{Rcc, RccConfig, RCC};
+use usart::{Usart, G_USART};
 
+pub mod core;
 pub mod exti;
 pub mod gpio;
 pub mod rcc;
 pub mod usart;
-pub mod core;
 
 pub struct Peripherals<'a> {
     pub rcc: RCC,
@@ -16,8 +16,12 @@ pub struct Peripherals<'a> {
 }
 
 pub struct Config {
-    // gpioa_config: GPIOAConfig,
+    pub rcc_config: RccConfig,
     pub usart_config: UsartConfig,
+}
+
+pub struct UsartConfig {
+    pub baud_rate: u32,
 }
 
 impl<'a> Peripherals<'a> {
@@ -26,7 +30,7 @@ impl<'a> Peripherals<'a> {
 
         let rcc_freeze = rcc.freeze();
         let gpioa = GPIOA::new();
-        let usart = Usart::new(c.usart_config);
+        let usart = Usart::new(c);
         unsafe {
             G_USART.replace(usart);
         };
