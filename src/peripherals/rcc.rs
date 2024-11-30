@@ -1,6 +1,7 @@
 use volatile_register::RW;
 
 const RCC_ADDR: u32 = 0x4002_1000;
+const HSI_DEFAULT_CLK: u32 = 8_000_000;
 
 pub struct Rcc<'a> {
     _rb: &'a mut RegisterBlock,
@@ -49,8 +50,34 @@ struct ROBlock {
 }
 
 pub struct RccConfig {
-    pub sysclk: u32,
-    pub pclk: u32,
+    pub source: ClockSource,
+    pub sysclk: SysClkMultiplier,
+    pub pclk: PPREScaler,
+}
+
+#[derive(PartialEq)]
+pub enum ClockSource {
+    HSI,
+    PLL,
+}
+
+pub struct SysClkMultiplier(u32);
+impl SysClkMultiplier {
+    pub const _HSI_DEFAULT: Self = Self(HSI_DEFAULT_CLK);
+    pub const PLL_MUL2: Self = Self(0b0000);
+    pub const PLL_MUL3: Self = Self(0b0001);
+    pub const PLL_MUL4: Self = Self(0b0010);
+    pub const PLL_MUL5: Self = Self(0b0011);
+    pub const PLL_MUL6: Self = Self(0b0100);
+}
+
+pub struct PPREScaler(u32);
+impl PPREScaler {
+    pub const AS_SYSCLK: Self = Self(0b000);
+    pub const PPRE_DIV2: Self = Self(0b100);
+    pub const PPRE_DIV4: Self = Self(0b101);
+    pub const PPRE_DIV8: Self = Self(0b110);
+    pub const PPRE_DIV16: Self = Self(0b111);
 }
 
 impl<'a> Rcc<'a> {
@@ -58,8 +85,25 @@ impl<'a> Rcc<'a> {
         let rcc = unsafe { &mut *(RCC_ADDR as *mut RegisterBlock) };
 
         unsafe {
-            // Modify default clocks
-            // TODO
+            if c.source == ClockSource::PLL {
+                // Modify default clocks
+                // 1. Disable the PLL
+                rcc.cr.modify(|m| m & !(1 << 24));
+                // 2. Wait until the PLL is fully stopped
+                while (rcc.cr.read() & (1 << 25)) == 1 {}
+                // 3. Let's setup the clock
+                rcc.cfgr.modify(|g| (g & !(0b1111 << 18)) | c.sysclk.0);
+                // 4. Enable the PLL
+                rcc.cr.modify(|m| m | (1 << 24));
+                // 5. Wait until the PLL is fully started again
+                while (rcc.cr.read() & (1 << 25)) == 1 {}
+
+                rcc.cfgr.modify(|m| (m & !(0b11)) | 0b10);
+            }
+
+            if c.pclk.0 != PPREScaler::AS_SYSCLK.0 {
+                rcc.cfgr.modify(|m| (m & !(0b111 << 8)) | c.pclk.0);
+            }
 
             // Enable GPIOA clock
             rcc.ahbenr.modify(|m| m | (1 << 17));

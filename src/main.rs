@@ -20,7 +20,7 @@ use circ_buffer::CircularBuffer;
 use dispatcher::ProcessIdentifier;
 use peripherals::{
     core::{IPR, IT_PENDSV},
-    rcc::{Rcc, RccConfig},
+    rcc::{ClockSource, PPREScaler, Rcc, RccConfig, SysClkMultiplier},
     usart::UsartConfig,
     Config, Peripherals,
 };
@@ -31,8 +31,9 @@ use tasks::*;
 #[no_mangle]
 extern "C" fn kmain() -> ! {
     let rcc = Rcc::new(RccConfig {
-        sysclk: 8_000_000,
-        pclk: 8_000_000,
+        source: ClockSource::PLL,
+        sysclk: SysClkMultiplier::PLL_MUL2,
+        pclk: PPREScaler::AS_SYSCLK,
     });
     let config = Config {
         usart_config: UsartConfig { baud_rate: 9600 },
