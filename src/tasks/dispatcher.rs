@@ -16,7 +16,7 @@ impl ProcessIdentifier {
         ProcessSaver
     }
 
-    pub fn retrieve_base_address(name: &'static str) -> Option<usize> {
+    pub fn retrieve_base_address(name: &str) -> Option<usize> {
         unsafe {
             FUNCTION_TABLE
                 .iter()

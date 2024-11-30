@@ -42,14 +42,8 @@ pub(in crate::shell) fn process_command(cmd: Vec<char>) -> Result<(), ShellError
             r
         }
         "addproc" => {
-            let r = args
-                .iter()
-                .collect::<String>()
-                .parse::<&str>()
-                .ok()
-                .and_then(|n| critical_section(|cs| add_proc(cs, n).ok()))
-                .ok_or_else(|| ShellError::ExecutionError);
-            r
+            let s: &str = &args.iter().collect::<String>();
+            critical_section(|cs| add_proc(cs, s))
         }
         _ => Err(ShellError::ParserError(String::from("Unrecognized opcode"))),
     };

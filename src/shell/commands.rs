@@ -55,8 +55,8 @@ pub(in crate::shell) fn rm_proc_by_name(
 }
 
 pub(in crate::shell) fn add_proc(
-    _cs: CriticalSection,
-    proc_name: &'static str,
+    _cs: &CriticalSection,
+    proc_name: &str,
 ) -> Result<(), ShellError> {
     let func = ProcessIdentifier::retrieve_base_address(proc_name)
         .ok_or_else(|| ShellError::ExecutionError)?;
