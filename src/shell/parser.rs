@@ -1,6 +1,6 @@
 use alloc::{string::String, vec::Vec};
 
-use crate::trap::critical_section::critical_section;
+use crate::{shell::commands::add_proc, trap::critical_section::critical_section};
 
 use super::{
     commands::{rm_proc_by_name, rm_proc_by_pid},
@@ -42,7 +42,14 @@ pub(in crate::shell) fn process_command(cmd: Vec<char>) -> Result<(), ShellError
             r
         }
         "addproc" => {
-            todo!();
+            let r = args
+                .iter()
+                .collect::<String>()
+                .parse::<&str>()
+                .ok()
+                .and_then(|n| critical_section(|cs| add_proc(cs, n).ok()))
+                .ok_or_else(|| ShellError::ExecutionError);
+            r
         }
         _ => Err(ShellError::ParserError(String::from("Unrecognized opcode"))),
     };

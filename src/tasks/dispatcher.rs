@@ -1,3 +1,4 @@
+// Todo? Should change with a LL instead, but since we don't have enough memory anyways it's pointless
 static mut FUNCTION_TABLE: [Option<ProcessIdentifier>; 10] = [None; 10];
 static mut TABLE_COUNT: usize = 0;
 
