@@ -99,12 +99,43 @@ unsafe fn alloc_first_fit(heap: *mut FreeList, size: u16) -> *mut FreeList {
     tmp_head
 }
 
-fn first_free_block(heap: *mut FreeList) -> *mut FreeList {
+fn pad_at(block: *mut FreeList, size: u16) {
+    unsafe {
+        let size_in_between: i16 =
+            (*block).size as i16 - 2 * size_of::<FreeList>() as i16 - size as i16;
+        let mut remaining_size = (*block).size - size;
+
+        if (block.byte_add((*block).size as usize + size_of::<FreeList>()) as usize)
+            < get_heap_end()
+        {
+            // We are indeed in between some blocks
+            remaining_size = size_in_between as u16;
+        }
+
+        init_metadata(block, size, true);
+        init_metadata(
+            block.byte_add(size as usize + size_of::<FreeList>()),
+            remaining_size,
+            false,
+        );
+    }
+}
+
+fn first_stackable_block(heap: *mut FreeList, size: u16) -> *mut FreeList {
     unsafe {
         let mut tmp_head = heap;
         let heap_end = get_heap_end();
 
-        while (tmp_head as usize) < heap_end && ((*tmp_head).size & 1) == 1 {
+        /*
+            We search for size >= size IF it's already aligned (hence we can use the block)
+            OR for size >= size+4+2*8 (2*header + 4 alloc)
+        */
+        while (tmp_head as usize) < heap_end
+            && (((*tmp_head).size & 1) == 1
+                || ((*tmp_head).size < size && (*tmp_head).size % 8 == 0)
+                || ((*tmp_head).size < size + 4 + 2 * size_of::<FreeList>() as u16
+                    && (*tmp_head).size % 8 == 4))
+        {
             tmp_head =
                 tmp_head.byte_add((((*tmp_head).size & (!1)) as usize) + size_of::<FreeList>());
         }
@@ -173,11 +204,11 @@ pub fn zalloc_stack(size: u16) -> *mut u8 {
                 return 0 as *mut u8;
             }
             FreeListWrapper(heap) => {
-                let last_block = first_free_block(heap);
+                let last_block = first_stackable_block(heap, size);
                 if last_block as usize % 8 == 4 {
                     // Quick & dirty trick to align to 8 bytes.
                     // Actually occupies 12 bytes since the header is 8 bytes
-                    zalloc_block(4);
+                    pad_at(last_block, 4);
                 }
 
                 let ret_stack = zalloc_block(size);
