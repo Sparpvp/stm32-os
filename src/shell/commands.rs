@@ -54,10 +54,7 @@ pub(in crate::shell) fn rm_proc_by_name(
     Ok(())
 }
 
-pub(in crate::shell) fn add_proc(
-    _cs: &CriticalSection,
-    proc_name: &str,
-) -> Result<(), ShellError> {
+pub(in crate::shell) fn add_proc(_cs: &CriticalSection, proc_name: &str) -> Result<(), ShellError> {
     let func = ProcessIdentifier::retrieve_base_address(proc_name)
         .ok_or_else(|| ShellError::ExecutionError)?;
     let func: fn() = unsafe { transmute(func) };

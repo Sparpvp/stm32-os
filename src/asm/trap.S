@@ -37,27 +37,36 @@ call_handler:
 _update_pc:
     // r0 -> pc
     // r1 -> stack_ptr
-    add r1, #24
+    ADD r1, #24
     STR r0, [r1]
-    bx lr
+    BX lr
 
 .global _get_pc
 .thumb
 .thumb_func
 _get_pc:
     // r0 -> stack_ptr; ret value
-    add r0, #24
+    ADD r0, #24
     LDR r1, [r0]
-    mov r0, r1
-    bx lr
+    MOV r0, r1
+    BX lr
 
-.global _setup_frame
+.global _extract_svc_comment
 .thumb
 .thumb_func
-_setup_frame:
-    // r0 -> stack_ptr; ret value
-    PUSH {r3}
-    bx lr
+_extract_svc_comment:
+    /* SUB r0, r0, #4
+    LDR r0, [r0]
+    MOV r1, #0xFF
+    LSL r1, r1, #24
+    MVN r1, r1
+    AND r0, r0, r1
+    BX lr */
+
+    // r0 -> stack pointer; ret value
+    LDR r1, [r0];
+    MOV r0, r1
+    BX lr
 
 /* ----------------------------- */
 /*         Vector Table          */

@@ -9,6 +9,8 @@ use core::{
 use irq_handlers::{usart2_irq_receive, usart2_transmission_complete};
 use volatile_register::RW;
 
+use crate::syscall::handle_syscall;
+
 const ICSR_ADDR: u32 = 0xE000ED04;
 const NVIC_ICER: u32 = 0xE000E180;
 
@@ -17,12 +19,12 @@ const NVIC_ICER: u32 = 0xE000E180;
 pub static mut FIRST_CTX_SWITCH: bool = true; // Resetted in ASM
 
 extern "C" {
-    fn _setup_frame(stack_ptr: *const u32) -> *const u32; // REQUIRES: r3 = lr
+    fn _extract_svc_comment(stack_ptr: *const u32) -> u32;
     fn _update_pc(pc: u32, stack_ptr: *const u32);
     fn _get_pc(stack_ptr: *const u32) -> u32;
 }
 
-fn pend_sv_set() {
+pub fn pend_sv_set() {
     // Bit 28: PENDSVSET
     let icsr = unsafe { &mut *(ICSR_ADDR as *mut RW<u32>) };
     unsafe {
@@ -68,7 +70,8 @@ extern "C" fn rust_trap_handler(stack_ptr: *const u32) {
         }
         11 => {
             // SVCall
-            todo!();
+            let svc_comment = unsafe { _extract_svc_comment(stack_ptr) };
+            handle_syscall(svc_comment, &mut return_pc);
         }
         15 => {
             // SysTick

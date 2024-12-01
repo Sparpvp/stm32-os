@@ -12,6 +12,7 @@ pub mod peripherals;
 pub mod process;
 pub mod scheduler;
 pub mod shell;
+pub mod syscall;
 pub mod tasks;
 pub mod trap;
 
@@ -47,8 +48,8 @@ extern "C" fn kmain() -> ! {
     // We give each function an alias/name that can be used to retrieve the fn address at runtime.
     // This must be done before spawning the processes, as it is required as a proof of construction for the spawn.
     let s = ProcessIdentifier::saver()
-        .add("alias1", beef)
-        .add("alias2", beef);
+        .add("beef", beef)
+        .add("sbeaf", sbeaf);
 
     // Spawn function takes care of all the final initialization.
     // It includes SysTick interrupts and Scheduler init (psp switch).

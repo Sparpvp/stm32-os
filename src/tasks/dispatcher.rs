@@ -20,6 +20,7 @@ impl ProcessIdentifier {
         unsafe {
             FUNCTION_TABLE
                 .iter()
+                .filter(|e| e.is_some())
                 .find(|o| o.unwrap().name == name)
                 .and_then(|x| Some(x.unwrap().base_address))
         }
