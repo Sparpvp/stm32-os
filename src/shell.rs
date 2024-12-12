@@ -47,7 +47,7 @@ pub fn shell() {
         }
 
         match process_command(curr_command) {
-            Ok(_) => {}
+            Ok(_) => println!("command executed successfully"),
             Err(e) => println!("unable to execute command. err: {}", e),
         };
     }
