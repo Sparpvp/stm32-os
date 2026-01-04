@@ -1,5 +1,7 @@
 ENTRY(_start)
 
+/* memory section adapted from rust-embedded cortex-m-quickstart 2024-10-02 */
+/* https://github.com/rust-embedded/cortex-m-quickstart/blob/ac02415275d0190a1a7aa730ec2b0bdf7c3ef88f/memory.x */
 MEMORY
 {
    /* NOTE 1 K = 1 KiBi = 1024 bytes */

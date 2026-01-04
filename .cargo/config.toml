@@ -1,3 +1,7 @@
+# credit rust-embedded cortex-m-quickstart 
+# https://github.com/rust-embedded/cortex-m-quickstart/blob/ac02415275d0190a1a7aa730ec2b0bdf7c3ef88f/.cargo/config.toml
+# 2024-10-02
+
 [target.thumbv6m-none-eabi]
 # uncomment this to make `cargo run` execute programs on QEMU
 # runner = "qemu-system-arm -cpu cortex-m3 -machine lm3s6965evb -nographic -semihosting-config enable=on,target=native -kernel"
