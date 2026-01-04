@@ -1,5 +1,6 @@
 use core::arch::asm;
 
+// for the macros, credit to https://osblog.stephenmarz.com/ch2.html 2024-10-03
 #[macro_export]
 macro_rules! print {
     ($($args:tt)+) => {{
@@ -30,6 +31,7 @@ macro_rules! println
 	});
 }
 
+// adapted from https://osblog.stephenmarz.com/ch2.html 2024-10-03
 #[no_mangle]
 extern "C" fn eh_personality() {}
 #[panic_handler]
@@ -56,6 +58,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     abort();
 }
 
+// adapted from https://osblog.stephenmarz.com/ch2.html 2024-10-03
 #[no_mangle]
 pub extern "C" fn abort() -> ! {
     loop {
